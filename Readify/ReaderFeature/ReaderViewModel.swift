@@ -7,6 +7,7 @@
 
 import Foundation
 import Observation
+import SwiftUI
 
 @Observable
 class ReaderViewModel {
@@ -16,8 +17,11 @@ class ReaderViewModel {
     
     let book: Book
     var isReading: Bool = false
-    var currentWordIndex: Int = 0
+   
     var wpm: Double = 240
+    
+    var currentWordIndex: Int = 0
+    
     
     var interval: TimeInterval {
         max(0.05, 60.0 / max(1, wpm))

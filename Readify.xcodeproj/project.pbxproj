@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3DC0B3F52EA970390007C299 /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B3F42EA970390007C299 /* WrappingHStack */; };
 		3DC0B3F82EAAC7850007C299 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B3F72EAAC7850007C299 /* FluidAudio */; };
+		3DC0B52C2EAC25460007C299 /* Parsing in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B52B2EAC25460007C299 /* Parsing */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3DC0B52C2EAC25460007C299 /* Parsing in Frameworks */,
 				3DC0B3F82EAAC7850007C299 /* FluidAudio in Frameworks */,
 				3DC0B3F52EA970390007C299 /* WrappingHStack in Frameworks */,
 			);
@@ -74,6 +76,7 @@
 			packageProductDependencies = (
 				3DC0B3F42EA970390007C299 /* WrappingHStack */,
 				3DC0B3F72EAAC7850007C299 /* FluidAudio */,
+				3DC0B52B2EAC25460007C299 /* Parsing */,
 			);
 			productName = Readify;
 			productReference = 3DE754432EA58152008F4E9A /* Readify.app */;
@@ -106,6 +109,7 @@
 			packageReferences = (
 				3DC0B3F32EA970390007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */,
 				3DC0B3F62EAAC7850007C299 /* XCRemoteSwiftPackageReference "FluidAudio" */,
+				3DC0B52A2EAC25460007C299 /* XCRemoteSwiftPackageReference "swift-parsing" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3DE754442EA58152008F4E9A /* Products */;
@@ -363,6 +367,14 @@
 				kind = branch;
 			};
 		};
+		3DC0B52A2EAC25460007C299 /* XCRemoteSwiftPackageReference "swift-parsing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-parsing";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.14.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -375,6 +387,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3DC0B3F62EAAC7850007C299 /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
+		};
+		3DC0B52B2EAC25460007C299 /* Parsing */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3DC0B52A2EAC25460007C299 /* XCRemoteSwiftPackageReference "swift-parsing" */;
+			productName = Parsing;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

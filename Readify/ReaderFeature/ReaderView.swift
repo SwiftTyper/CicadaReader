@@ -3,21 +3,22 @@ import SwiftUI
 import Combine
 import FluidAudio
 import AVFoundation
+import WrappingHStack
 
 struct ReaderView: View {
     @State private var model: ReaderViewModel
+    @State private var scrollPosition = ScrollPosition()
     
     init(book: Book) {
         _model = State(wrappedValue: ReaderViewModel(book: book))
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                TextComposerView(
-                    words: model.book.content.words,
-                    currentWordIndex: model.currentWordIndex
-                )
+        ScrollView {
+            TextComposerView(
+                words: model.book.content.words,
+                currentWordIndex: model.currentWordIndex
+            )
 //                .task {
 //                    do {
 //
@@ -27,7 +28,7 @@ struct ReaderView: View {
 //                        // Synthesize speech to memory (not to a file)
 //                        let audioData = try await manager.synthesize(text: "Hello, world! This is a test.")
 //                        self.data = audioData
-//                        
+//
 //                    } catch {
 //                        print(error.localizedDescription)
 //                    }
@@ -41,15 +42,15 @@ struct ReaderView: View {
 //                        print("TTS error: \(error)")
 //                      }
 //                }
+        }
+        .scrollPosition($scrollPosition, anchor: .center)
+        .onChange(of: model.currentWordIndex) { _, newValue in
+            withAnimation {
+                self.scrollPosition = .init(id: String(newValue))
             }
-//            .onChange(of: model.currentWordIndex) { _, newValue in
-//                withAnimation(.easeInOut(duration: 0.2)) {
-//                    proxy.scrollTo(TextComposerView.wordID(newValue), anchor: .center)
-//                }
-//            }
-//            .onAppear {
-//                proxy.scrollTo(TextComposerView.wordID(currentWordIndex), anchor: .top)
-//            }
+        }
+        .onAppear {
+            self.scrollPosition = .init(id: String(model.currentWordIndex))
         }
         .navigationTitle(model.book.title)
         .navigationBarTitleDisplayMode(.inline)

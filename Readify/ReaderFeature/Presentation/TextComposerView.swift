@@ -33,6 +33,7 @@ struct TextComposerView: View {
                                     .opacity(isCurrent ? 1 : 0)
                             }
                     }
+                    .id(String(index))
            }
         }
         .padding(.horizontal)
