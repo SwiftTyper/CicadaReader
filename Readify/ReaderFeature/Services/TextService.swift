@@ -9,6 +9,7 @@ import Foundation
 import NaturalLanguage
 
 //MARK: To Do: stop the enumartion once we find the sentecse we are looking for
+
 struct TextService {
     func startOfPreviousSentence(wordIndex: Int, from text: String) -> Int? {
         let boundaries = sentenceBoundaries(for: text)
@@ -28,6 +29,16 @@ struct TextService {
             currentIndex < boundaries.count - 1
         else { return nil }
         return boundaries[currentIndex + 1].start
+    }
+    
+    func getCurrentSentence(wordIndex: Int, from text: String) -> String? {
+        let boundaries = sentenceBoundaries(for: text)
+        guard
+            let current = boundaries.first(where: { $0.start <= wordIndex && $0.end >= wordIndex }),
+            let currentIndex = boundaries.firstIndex(where: { $0 == current })
+        else { return nil }
+        let string = text.words[wordIndex...boundaries[currentIndex].end].joined(separator: " ")
+        return string
     }
     
     private func sentenceBoundaries(for text: String) -> [(start: Int, end: Int)] {

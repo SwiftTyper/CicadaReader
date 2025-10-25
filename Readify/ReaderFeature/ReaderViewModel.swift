@@ -16,28 +16,41 @@ class ReaderViewModel {
     }
     
     let book: Book
-    var isReading: Bool = false
-   
+    let speech: SpeechManager = .init()
+    
+    var status: Status = .idle
     var wpm: Double = 240
-    
     var currentWordIndex: Int = 0
-    
     
     var interval: TimeInterval {
         max(0.05, 60.0 / max(1, wpm))
     }
     
     private var timer: AsyncTimer? = nil
+    
   
     func toggleAutoRead() {
-        self.isReading.toggle()
-        if self.isReading {
-            self.timer = AsyncTimer(interval: interval) { _ in
-                self.timerTick()
+        self.status.toggle()
+        if self.status == .reading {
+            let sentence = TextService().getCurrentSentence(wordIndex: currentWordIndex, from: book.content)
+            guard let sentence else { return }
+            let sentenceStart = currentWordIndex
+            Task {
+                do {
+                    for await wordIndex in try await speech.say(sentence) {
+                        self.currentWordIndex = sentenceStart + wordIndex
+                    }
+                } catch {
+                    print(error.localizedDescription)
+                }
             }
-            self.timer?.start()
+            
+//            self.timer = AsyncTimer(interval: interval) { _ in
+//                self.timerTick()
+//            }
+//            self.timer?.start()
         } else {
-            self.stopTimer()
+//            self.stopTimer()
         }
     }
     
@@ -50,8 +63,24 @@ class ReaderViewModel {
         if self.currentWordIndex < book.content.words.count - 1 {
             self.currentWordIndex += 1
         } else {
-            self.isReading = false
+            self.status = .idle
             self.stopTimer()
+        }
+    }
+}
+
+extension ReaderViewModel {
+    enum Status {
+        case reading
+        case idle
+        case loading
+        
+        mutating func toggle() {
+            if self == .reading {
+                self = .idle
+            } else {
+                self = .reading
+            }
         }
     }
 }

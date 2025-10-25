@@ -1,30 +1,6 @@
 import Foundation
 import SwiftUI
 
-//    .task {
-//                    do {
-//
-//                        let manager = TtSManager()
-//                        try await manager.initialize()
-//
-//                        // Synthesize speech to memory (not to a file)
-//                        let audioData = try await manager.synthesize(text: "Hello, world! This is a test.")
-//                        self.data = audioData
-//
-//                    } catch {
-//                        print(error.localizedDescription)
-//                    }
-//                      do {
-//                          let models = try await TtsModels.download(variants: [.fiveSecond])
-//                          TtSManager.initialize()
-//                          let kokoroModel = models.model(for: .fiveSecond)
-////                        let data = try await KokoroModel.synthesize(text: "Hello from FluidAudio.")
-////                        try data.write(to: URL(fileURLWithPath: "out.wav"))
-//                      } catch {
-//                        print("TTS error: \(error)")
-//                      }
-//                }
-
 struct ReaderView: View {
     @State private var model: ReaderViewModel
     @State private var scrollPosition = ScrollPosition()
@@ -49,6 +25,21 @@ struct ReaderView: View {
         .onAppear {
             self.scrollPosition = .init(id: String(model.currentWordIndex))
         }
+        .overlay {
+            if self.model.status == .loading {
+                ProgressView()
+            }
+        }
+        .task {
+            do {
+                self.model.status = .loading
+                try await self.model.speech.configure()
+                self.model.status = .idle
+            } catch {
+                print(error.localizedDescription)
+                self.model.status = .idle
+            }
+        }
         .navigationTitle(model.book.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -72,7 +63,7 @@ struct ReaderView: View {
                 Button {
                     model.toggleAutoRead()
                 } label: {
-                    Image(systemName: model.isReading ? "pause.fill" : "play.fill")
+                    Image(systemName: model.status == .reading ? "pause.fill" : "play.fill")
                 }
                 .contentTransition(.symbolEffect(.replace))
             }
