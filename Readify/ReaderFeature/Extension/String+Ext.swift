@@ -6,21 +6,15 @@
 //
 
 import Foundation
-import NaturalLanguage
 
 extension String {
     var words: [String] {
-        let tokenizer = NLTokenizer(unit: .word)
-        tokenizer.string = self
-        var words: [String] = []
-        tokenizer.enumerateTokens(in: self.startIndex..<self.endIndex) { range, _ in
-            let word = String(self[range])
-            guard !word.isEmpty else {
-               return true
-            }
-            words.append(word)
-            return true
+        let pattern = #"\S+"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let range = NSRange(startIndex..., in: self)
+
+        return regex.matches(in: self, range: range).compactMap {
+            Range($0.range, in: self).map { String(self[$0]) }
         }
-        return words
     }
 }

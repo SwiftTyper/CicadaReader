@@ -56,7 +56,7 @@ class ReaderViewModel {
     }
 }
 
-//MARK: Forward & Reverse
+//MARK: Forward & Reverse Actions
 extension ReaderViewModel {
     var canStepBack: Bool {
         TextService().startOfPreviousSentence(
