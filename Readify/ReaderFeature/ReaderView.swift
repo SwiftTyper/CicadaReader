@@ -1,25 +1,7 @@
 import Foundation
 import SwiftUI
-import Combine
-import FluidAudio
-import AVFoundation
-import WrappingHStack
 
-struct ReaderView: View {
-    @State private var model: ReaderViewModel
-    @State private var scrollPosition = ScrollPosition()
-    
-    init(book: Book) {
-        _model = State(wrappedValue: ReaderViewModel(book: book))
-    }
-
-    var body: some View {
-        ScrollView {
-            TextComposerView(
-                words: model.book.content.words,
-                currentWordIndex: model.currentWordIndex
-            )
-//                .task {
+//    .task {
 //                    do {
 //
 //                        let manager = TtSManager()
@@ -42,6 +24,21 @@ struct ReaderView: View {
 //                        print("TTS error: \(error)")
 //                      }
 //                }
+
+struct ReaderView: View {
+    @State private var model: ReaderViewModel
+    @State private var scrollPosition = ScrollPosition()
+    
+    init(book: Book) {
+        _model = State(wrappedValue: ReaderViewModel(book: book))
+    }
+
+    var body: some View {
+        ScrollView {
+            TextComposerView(
+                words: model.book.content.words,
+                currentWordIndex: model.currentWordIndex
+            )
         }
         .scrollPosition($scrollPosition, anchor: .center)
         .onChange(of: model.currentWordIndex) { _, newValue in
@@ -61,12 +58,14 @@ struct ReaderView: View {
                 } label: {
                     Image(systemName: "arrow.uturn.backward")
                 }
+                .disabled(!model.canStepBack)
                 
                 Button {
                     model.stepForward()
                 } label: {
                     Image(systemName: "arrow.uturn.forward")
                 }
+                .disabled(!model.canStepForward)
             }
             
             ToolbarItem(placement: .bottomBar) {
@@ -75,6 +74,7 @@ struct ReaderView: View {
                 } label: {
                     Image(systemName: model.isReading ? "pause.fill" : "play.fill")
                 }
+                .contentTransition(.symbolEffect(.replace))
             }
         }
     }
