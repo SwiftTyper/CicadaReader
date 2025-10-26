@@ -8,7 +8,7 @@
 import Foundation
 import AVFoundation
 import SwiftUI
-import FluidAudio
+import TTSFeature
 
 actor SpeechManager {
     private var player: AVAudioPlayer?

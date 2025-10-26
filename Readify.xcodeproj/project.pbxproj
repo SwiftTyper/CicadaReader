@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3DC0B3F52EA970390007C299 /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B3F42EA970390007C299 /* WrappingHStack */; };
-		3DC0B3F82EAAC7850007C299 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B3F72EAAC7850007C299 /* FluidAudio */; };
+		3DC0B6EB2EAE4EC00007C299 /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B6EA2EAE4EC00007C299 /* WrappingHStack */; };
+		3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -16,6 +16,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		3DC0B6862EAE43CC0007C299 /* Packages */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Packages;
+			sourceTree = "<group>";
+		};
 		3DE754452EA58152008F4E9A /* Readify */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Readify;
@@ -28,18 +33,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3DC0B3F82EAAC7850007C299 /* FluidAudio in Frameworks */,
-				3DC0B3F52EA970390007C299 /* WrappingHStack in Frameworks */,
+				3DC0B6EB2EAE4EC00007C299 /* WrappingHStack in Frameworks */,
+				3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3DC0B6882EAE4C500007C299 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		3DE7543A2EA58152008F4E9A = {
 			isa = PBXGroup;
 			children = (
+				3DC0B6862EAE43CC0007C299 /* Packages */,
 				3DE754452EA58152008F4E9A /* Readify */,
+				3DC0B6882EAE4C500007C299 /* Frameworks */,
 				3DE754442EA58152008F4E9A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -72,8 +86,8 @@
 			);
 			name = Readify;
 			packageProductDependencies = (
-				3DC0B3F42EA970390007C299 /* WrappingHStack */,
-				3DC0B3F72EAAC7850007C299 /* FluidAudio */,
+				3DC0B6EA2EAE4EC00007C299 /* WrappingHStack */,
+				3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */,
 			);
 			productName = Readify;
 			productReference = 3DE754432EA58152008F4E9A /* Readify.app */;
@@ -104,8 +118,7 @@
 			mainGroup = 3DE7543A2EA58152008F4E9A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				3DC0B3F32EA970390007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */,
-				3DC0B3F62EAAC7850007C299 /* XCRemoteSwiftPackageReference "FluidAudio" */,
+				3DC0B6E92EAE4EC00007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3DE754442EA58152008F4E9A /* Products */;
@@ -347,7 +360,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		3DC0B3F32EA970390007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */ = {
+		3DC0B6E92EAE4EC00007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ksemianov/WrappingHStack";
 			requirement = {
@@ -355,26 +368,17 @@
 				minimumVersion = 0.2.0;
 			};
 		};
-		3DC0B3F62EAAC7850007C299 /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/FluidInference/FluidAudio.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		3DC0B3F42EA970390007C299 /* WrappingHStack */ = {
+		3DC0B6EA2EAE4EC00007C299 /* WrappingHStack */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3DC0B3F32EA970390007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */;
+			package = 3DC0B6E92EAE4EC00007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */;
 			productName = WrappingHStack;
 		};
-		3DC0B3F72EAAC7850007C299 /* FluidAudio */ = {
+		3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3DC0B3F62EAAC7850007C299 /* XCRemoteSwiftPackageReference "FluidAudio" */;
-			productName = FluidAudio;
+			productName = TTSFeature;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
