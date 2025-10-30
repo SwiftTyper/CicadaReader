@@ -26,24 +26,21 @@ class ReaderViewModel {
         max(0.05, 60.0 / max(1, wpm))
     }
     
-    private var timer: AsyncTimer? = nil
-    
-  
     func toggleAutoRead() {
         self.status.toggle()
         if self.status == .reading {
             let sentence = TextService().getCurrentSentence(wordIndex: currentWordIndex, from: book.content)
             guard let sentence else { return }
             let sentenceStart = currentWordIndex
-            Task {
-                do {
-                    for await wordIndex in try await speech.say(sentence) {
-                        self.currentWordIndex = sentenceStart + wordIndex
-                    }
-                } catch {
-                    print(error.localizedDescription)
-                }
-            }
+//            Task {
+//                do {
+//                    for await wordIndex in try await speech.say(sentence) {
+//                        self.currentWordIndex = sentenceStart + wordIndex
+//                    }
+//                } catch {
+//                    print(error.localizedDescription)
+//                }
+//            }
             
 //            self.timer = AsyncTimer(interval: interval) { _ in
 //                self.timerTick()
@@ -51,20 +48,6 @@ class ReaderViewModel {
 //            self.timer?.start()
         } else {
 //            self.stopTimer()
-        }
-    }
-    
-    private func stopTimer() {
-        self.timer?.stop()
-        self.timer = nil
-    }
-    
-    private func timerTick() {
-        if self.currentWordIndex < book.content.words.count - 1 {
-            self.currentWordIndex += 1
-        } else {
-            self.status = .idle
-            self.stopTimer()
         }
     }
 }
