@@ -48,15 +48,6 @@ actor TextChunker {
         while i < sentences.count {
             let j = min(i + 2, sentences.count)
             let group = sentences[i..<j].joined(separator: " ")
-//            let start = ranges[i].lowerBound
-//            let end = ranges[j - 1].upperBound
-//            let chunkRange = start..<end
-
-//            let chunk = Chunk(
-//                text: group.trimmingCharacters(in: .whitespacesAndNewlines),
-//                pauseAfterMs: 200,
-//                textRange: text.distance(from: text.startIndex, to: start)..<text.distance(from: text.startIndex, to: end)
-//            )
             output.append(group)
             i = j
         }

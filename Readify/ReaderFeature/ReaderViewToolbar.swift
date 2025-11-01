@@ -9,36 +9,33 @@ import Foundation
 import SwiftUI
 
 struct ReaderViewToolbar: ToolbarContent {
-    let model: ReaderViewModel
-    let controller: ReaderController
+    let vm: ReaderViewModel
     
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
-                model.stepBack()
+                vm.stepBack()
             } label: {
                 Image(systemName: "arrow.uturn.backward")
             }
-            .disabled(!model.canStepBack)
+            .disabled(!vm.canStepBack)
             
             Button {
-                model.stepForward()
+                vm.stepForward()
             } label: {
                 Image(systemName: "arrow.uturn.forward")
             }
-            .disabled(!model.canStepForward)
+            .disabled(!vm.canStepForward)
         }
         
         ToolbarItem(placement: .bottomBar) {
             Button {
-                Task {
-                    await controller.read()
-                }
-//                model.toggleAutoRead()
+                vm.toggleAutoRead()
             } label: {
-                Image(systemName: model.status == .reading ? "pause.fill" : "play.fill")
+                Image(systemName: (vm.status == .reading && vm.status == .loading) ? "pause.fill" : "play.fill")
             }
             .contentTransition(.symbolEffect(.replace))
+            .disabled(vm.status == .preparing)
         }
     }
 }

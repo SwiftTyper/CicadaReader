@@ -8,63 +8,67 @@
 import Foundation
 import Observation
 import SwiftUI
+import TTSFeature
 
 @Observable
 class ReaderViewModel {
-    init(book: Book) {
-        self.book = book
+    private let synthesizer: TtSManager
+    private let player: StreamingAudioPlayer
+    private let synthQueue: AsyncBuffer<SynthesizedChunk?>
+    
+    private let text: String
+    private var currentTask: Task<Void, Never>?
+    
+    var status: ReaderStatus = .idle
+    var currentWordIndex: Int = 0
+
+    init(
+        synthesizer: TtSManager,
+        text: String,
+        bufferAhead: Int = 2,
+    ) {
+        self.text = text
+        let chunker = TextChunker(text: text)
+        self.synthesizer = synthesizer
+        self.synthQueue = AsyncBuffer(
+            targetSize: bufferAhead,
+            produce: {
+                guard let chunk = await chunker.getNext() else { return nil }
+                guard let audio = try? await synthesizer.synthesize(text: chunk) else { return nil }
+                return SynthesizedChunk(chunk: chunk, audioData: audio)
+            }
+        )
+        self.player = StreamingAudioPlayer()
     }
     
-    let book: Book
-    let speech: SpeechManager = .init()
-    
-    var status: Status = .idle
-    var wpm: Double = 240
-    var currentWordIndex: Int = 0
-    
-    var interval: TimeInterval {
-        max(0.05, 60.0 / max(1, wpm))
+    func setup() async {
+        self.status = .preparing
+        do {
+            try await synthesizer.initialize()
+        } catch {
+            self.status = .idle
+        }
+        self.status = .idle
     }
     
     func toggleAutoRead() {
         self.status.toggle()
+        
         if self.status == .reading {
-            let sentence = TextService().getCurrentSentence(wordIndex: currentWordIndex, from: book.content)
-            guard let sentence else { return }
-            let sentenceStart = currentWordIndex
-//            Task {
-//                do {
-//                    for await wordIndex in try await speech.say(sentence) {
-//                        self.currentWordIndex = sentenceStart + wordIndex
-//                    }
-//                } catch {
-//                    print(error.localizedDescription)
-//                }
-//            }
-            
-//            self.timer = AsyncTimer(interval: interval) { _ in
-//                self.timerTick()
-//            }
-//            self.timer?.start()
-        } else {
-//            self.stopTimer()
+            self.currentTask = Task {
+                await read()
+            }
+        } else if self.status == .idle {
+            self.currentTask?.cancel()
         }
     }
-}
 
-extension ReaderViewModel {
-    enum Status {
-        case reading
-        case idle
-        case loading
+    private func read() async {
+        guard let chunk = try? await synthQueue.next() else { return }
         
-        mutating func toggle() {
-            if self == .reading {
-                self = .idle
-            } else {
-                self = .reading
-            }
-        }
+        await self.player.queue(audio: chunk.audioData)
+        
+        await read()
     }
 }
 
@@ -72,22 +76,22 @@ extension ReaderViewModel {
 extension ReaderViewModel {
     var canStepBack: Bool {
         TextService().startOfPreviousSentence(
-            wordIndex: currentWordIndex,
-            from: book.content
+            wordIndex: self.currentWordIndex,
+            from: self.text
         ) != nil
     }
     
     var canStepForward: Bool {
         TextService().startOfNextSentence(
-            wordIndex: currentWordIndex,
-            from: book.content
+            wordIndex: self.currentWordIndex,
+            from: self.text
         ) != nil
     }
 
     func stepBack() {
         let start = TextService().startOfPreviousSentence(
-            wordIndex: currentWordIndex,
-            from: book.content
+            wordIndex: self.currentWordIndex,
+            from: self.text
         )
         guard let start else { return }
         self.currentWordIndex = start
@@ -95,8 +99,8 @@ extension ReaderViewModel {
 
     func stepForward() {
         let end = TextService().startOfNextSentence(
-            wordIndex: currentWordIndex,
-            from: book.content
+            wordIndex: self.currentWordIndex,
+            from: self.text
         )
         guard let end = end else { return }
         self.currentWordIndex = end

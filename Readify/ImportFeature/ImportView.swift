@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import TTSFeature
 
 struct ImportView: View {
     @State private var book: Book? = nil
@@ -21,7 +22,7 @@ struct ImportView: View {
                 Spacer()
             }
             .navigationDestination(item: $book) { book in
-                ReaderView(book: book)
+                ReaderView(book: book, synthesizer: .init())
             }
             .navigationTitle("Import")
         }
