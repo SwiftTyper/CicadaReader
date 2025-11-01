@@ -98,11 +98,20 @@ actor StreamingAudioPlayer {
     }
     
     private func duration(of data: Data) -> TimeInterval {
-        let sampleRate = format.sampleRate
         let bytesPerFrame = Int(format.streamDescription.pointee.mBytesPerFrame)
         let totalFrames = data.count / bytesPerFrame
+        let sampleRate = format.sampleRate
         let totalDuration = Double(totalFrames) / sampleRate
         return totalDuration
+    }
+    
+    func getCurrentElapsedTime() -> TimeInterval? {
+        guard
+            let nodeTime = playerNode.lastRenderTime,
+            let playerTime = playerNode.playerTime(forNodeTime: nodeTime)
+        else { return nil }
+        
+        return Double(playerTime.sampleTime) / playerTime.sampleRate
     }
     
     func wordStream(words: [String], audio data: Data) -> AsyncStream<Int> {
@@ -116,28 +125,32 @@ actor StreamingAudioPlayer {
                     return
                 }
 
-                var currentWordIndex = -1
+                var chunkStartTime: TimeInterval? = nil
+                var previousIndex: Int? = nil
 
                 while true {
                     guard
                         await playerNode.isPlaying,
-                        let nodeTime = await playerNode.lastRenderTime,
-                        let playerTime = await playerNode.playerTime(forNodeTime: nodeTime)
+                        let elapsedSeconds = await getCurrentElapsedTime()
                     else {
                         try? await Task.sleep(for: .milliseconds(50))
                         continue
                     }
 
-                    let elapsedSeconds = Double(playerTime.sampleTime) / playerTime.sampleRate
-                    let index = Int(elapsedSeconds / baseWordDuration)
-
-                    if index != currentWordIndex, index < words.count {
-                        currentWordIndex = index
-                        continuation.yield(index)
+                    if chunkStartTime == nil {
+                        chunkStartTime = elapsedSeconds
+                        continue
                     }
 
-                    // If finished
-                    if elapsedSeconds >= totalDuration {
+                    let relativeTime = elapsedSeconds - chunkStartTime!
+                    let index = Int(relativeTime / baseWordDuration)
+
+                    if previousIndex != index && index < words.count {
+                        previousIndex = index
+                        continuation.yield(index+1)
+                    }
+
+                    if relativeTime >= totalDuration {
                         continuation.finish()
                         break
                     }

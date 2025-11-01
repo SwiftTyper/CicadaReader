@@ -33,9 +33,9 @@ class ReaderViewModel {
         self.synthQueue = AsyncBuffer(
             targetSize: bufferAhead,
             produce: {
-                guard let chunk = await chunker.getNext() else { return nil }
-                guard let audio = try? await synthesizer.synthesize(text: chunk) else { return nil }
-                return SynthesizedChunk(chunk: chunk, audioData: audio)
+                guard let text = await chunker.getNext() else { return nil }
+                guard let audio = try? await synthesizer.synthesize(text: text) else { return nil }
+                return SynthesizedChunk(content: text, audioData: audio)
             }
         )
         self.player = StreamingAudioPlayer()
@@ -64,11 +64,30 @@ class ReaderViewModel {
     }
 
     private func read() async {
+        // handle errors
         guard let chunk = try? await synthQueue.next() else { return }
-        
-        await self.player.queue(audio: chunk.audioData)
-        
+        let chunkStartIndex = self.currentWordIndex
+
+        await withDiscardingTaskGroup { group in
+            group.addTask {
+                await self.player.queue(audio: chunk.audioData)
+            }
+            
+            group.addTask {
+                let stream = await self.player.wordStream(words: chunk.content.words, audio: chunk.audioData)
+                for await wordIndex in stream {
+                    print(wordIndex)
+                    await self.setWordIndex(value: wordIndex + chunkStartIndex)
+                }
+            }
+        }
+       
         await read()
+    }
+    
+    @MainActor
+    func setWordIndex(value: Int) {
+        self.currentWordIndex = value
     }
 }
 

@@ -53,6 +53,6 @@ struct ReaderView: View {
 }
 
 struct SynthesizedChunk {
-    let chunk: String
+    let content: String
     let audioData: Data
 }

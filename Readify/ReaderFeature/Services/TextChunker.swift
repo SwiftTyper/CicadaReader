@@ -9,8 +9,8 @@ import Foundation
 import NaturalLanguage
 
 actor TextChunker {
-    var currentIndex: Int = 0
-    var chunks: [String] = []
+    private var currentIndex: Int = 0
+    private var chunks: [String] = []
     
     init(text: String) {
         self.chunks = self.chunk(text: text)
