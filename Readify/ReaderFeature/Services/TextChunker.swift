@@ -10,35 +10,31 @@ import NaturalLanguage
 
 actor TextChunker {
     private var currentIndex: Int = 0
-    private var chunks: [String] = []
-    
+    nonisolated private let chunks: [String]
+
     init(text: String) {
-        self.chunks = self.chunk(text: text)
+        self.chunks = TextChunker.makeChunks(from: text)
     }
-    
-    func getNext() -> String? {
-        guard currentIndex < chunks.count else { return nil }
+
+    func getNext() throws -> String {
+        guard currentIndex < chunks.count
+        else { throw ChunkingError.runOutOfChunks }
+
         let string = chunks[currentIndex]
-    
-//        if currentIndex < chunks.count - 1 {
-            currentIndex += 1
-//        }
-        
+        currentIndex += 1
         return string
     }
-    
-    private nonisolated func chunk(text: String) -> [String] {
+
+    private static nonisolated func makeChunks(from text: String) -> [String] {
         let tokenizer = NLTokenizer(unit: .sentence)
         tokenizer.string = text
 
         var sentences: [Substring] = []
-        var ranges: [Range<String.Index>] = []
 
         tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
             let sentence = text[range]
             if !sentence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 sentences.append(sentence)
-                ranges.append(range)
             }
             return true
         }
@@ -52,5 +48,9 @@ actor TextChunker {
             i = j
         }
         return output
+    }
+
+    enum ChunkingError: Error {
+        case runOutOfChunks
     }
 }

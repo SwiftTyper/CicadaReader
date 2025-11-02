@@ -47,7 +47,17 @@ actor StreamingAudioPlayer {
             memcpy(buffer.int16ChannelData![0], baseAddress, Int(buffer.frameLength) * MemoryLayout<Int16>.size)
         }
         
-        await playerNode.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack)
+        if Task.isCancelled { return }
+        
+        if !playerNode.isPlaying {
+            playerNode.play()
+        }
+        
+        await withTaskCancellationHandler {
+            _ = await playerNode.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack)
+        } onCancel: {
+            self.playerNode.stop()
+        }
     }
     
     private func stripWavHeader(_ data: Data) -> Data {
@@ -57,24 +67,9 @@ actor StreamingAudioPlayer {
             return data
         }
     }
-    
-    private func duration(of data: Data) -> TimeInterval {
-        let bytesPerFrame = Int(format.streamDescription.pointee.mBytesPerFrame)
-        let totalFrames = data.count / bytesPerFrame
-        let sampleRate = format.sampleRate
-        let totalDuration = Double(totalFrames) / sampleRate
-        return totalDuration
-    }
-    
-    private func getCurrentElapsedTime() -> TimeInterval? {
-        guard
-            let nodeTime = playerNode.lastRenderTime,
-            let playerTime = playerNode.playerTime(forNodeTime: nodeTime)
-        else { return nil }
-        
-        return Double(playerTime.sampleTime) / playerTime.sampleRate
-    }
-  
+}
+
+extension StreamingAudioPlayer {
     func wordStream(words: [String], audio data: Data) -> AsyncStream<Int> {
         let totalDuration = duration(of: data)
         let totalNumberOfLetters = Double(words.reduce(0) { $0 + $1.count }) + Double(words.count - 1)
@@ -88,7 +83,7 @@ actor StreamingAudioPlayer {
         }
         
         return AsyncStream { continuation in
-            Task { [weak self] in
+            let task = Task { [weak self] in
                 guard let self else {
                     continuation.finish()
                     return
@@ -136,6 +131,26 @@ actor StreamingAudioPlayer {
                     try? await Task.sleep(for: .milliseconds(25))
                 }
             }
+            
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
         }
+    }
+    
+    private func duration(of data: Data) -> TimeInterval {
+        let bytesPerFrame = Int(format.streamDescription.pointee.mBytesPerFrame)
+        let totalFrames = data.count / bytesPerFrame
+        let sampleRate = format.sampleRate
+        let totalDuration = Double(totalFrames) / sampleRate
+        return totalDuration
+    }
+    
+    private func getCurrentElapsedTime() -> TimeInterval? {
+        guard
+            let nodeTime = playerNode.lastRenderTime,
+            let playerTime = playerNode.playerTime(forNodeTime: nodeTime)
+        else { return nil }
+        return Double(playerTime.sampleTime) / playerTime.sampleRate
     }
 }

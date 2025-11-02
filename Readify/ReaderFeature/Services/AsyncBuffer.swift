@@ -20,7 +20,6 @@ actor AsyncBuffer<T> {
 
     func next() async throws -> T {
         if buffer.isEmpty {
-            print("starting pred")
             let item = try await produce()
             append(item)
         }

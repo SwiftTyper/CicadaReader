@@ -14,7 +14,7 @@ import TTSFeature
 class ReaderViewModel {
     private let synthesizer: TtSManager
     private let player: StreamingAudioPlayer
-    private let synthQueue: AsyncBuffer<SynthesizedChunk?>
+    private let synthQueue: AsyncBuffer<SynthesizedChunk>
     
     private let text: String
     private var currentTask: Task<Void, Never>?
@@ -33,14 +33,15 @@ class ReaderViewModel {
         self.synthQueue = AsyncBuffer(
             targetSize: bufferAhead,
             produce: {
-                guard let text = await chunker.getNext() else { return nil }
-                guard let audio = try? await synthesizer.synthesize(text: text) else { return nil }
+                let text = try await chunker.getNext()
+                try Task.checkCancellation()
+                let audio = try await synthesizer.synthesize(text: text)
                 return SynthesizedChunk(content: text, audioData: audio)
             }
         )
-        self.player = StreamingAudioPlayer()
+        self.player = .init()
     }
-    
+
     func setup() async {
         self.status = .preparing
         do {
@@ -56,18 +57,29 @@ class ReaderViewModel {
         
         if self.status == .reading {
             self.currentTask = Task {
-                await read()
+                do {
+                    try await read()
+                } catch is CancellationError  {
+                    self.status = .idle
+                } catch is TextChunker.ChunkingError {
+                    self.status = .idle
+                    //change the button to restart
+                } catch {
+                    //show error
+                }
             }
         } else if self.status == .idle {
             self.currentTask?.cancel()
         }
     }
 
-    private func read() async {
-        // handle errors
-        guard let chunk = try? await synthQueue.next() else { return }
+    private func read() async throws {
+        self.status = .loading
+        let chunk: SynthesizedChunk = try await self.synthQueue.next()
+        self.status = .reading
+        
         let chunkStartIndex = self.currentWordIndex
-
+        
         await withDiscardingTaskGroup { group in
             group.addTask {
                 await self.player.queue(audio: chunk.audioData)
@@ -81,11 +93,11 @@ class ReaderViewModel {
             }
         }
        
-        await read()
+        try await self.read()
     }
     
     @MainActor
-    func setWordIndex(value: Int) {
+    private func setWordIndex(value: Int) {
         self.currentWordIndex = value
     }
 }

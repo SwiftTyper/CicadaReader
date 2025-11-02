@@ -11,14 +11,15 @@ import SwiftUI
 struct LoaderView: ViewModifier {
     let isActive: Bool
     let isFullScreen: Bool
+    let label: String
     
     func body(content: Content) -> some View {
         if isActive && isFullScreen {
-            ProgressView()
+            ProgressView(label)
         } else if isActive {
             content
                 .overlay {
-                   ProgressView()
+                   ProgressView(label)
                 }
         } else {
             content
@@ -27,7 +28,13 @@ struct LoaderView: ViewModifier {
 }
 
 extension View {
-    func loader(_ isActive: Bool, isFullScreen: Bool = false) -> some View {
-        self.modifier(LoaderView(isActive: isActive, isFullScreen: isFullScreen))
+    func loader(_ isActive: Bool, isFullScreen: Bool = false, label: String = "Loading...") -> some View {
+        self.modifier(
+            LoaderView(
+                isActive: isActive,
+                isFullScreen: isFullScreen,
+                label: label
+            )
+        )
     }
 }
