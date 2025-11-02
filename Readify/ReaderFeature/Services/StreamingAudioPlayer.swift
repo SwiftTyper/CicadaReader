@@ -9,28 +9,33 @@ import Foundation
 import AVFoundation
 import SwiftUI
 import Accelerate
+import TTSFeature
 
 actor StreamingAudioPlayer {
     private let engine = AVAudioEngine()
     private let playerNode = AVAudioPlayerNode()
-    
+    private let format: AVAudioFormat!
+
     private var previousTail: [Int16] = []
     private var maxMagnitude: Float = 0.0
     private let crossfadeSamples = 240
     
-    private let format: AVAudioFormat = .init(
-        commonFormat: .pcmFormatInt16,
-        sampleRate: 24000,
-        channels: 1,
-        interleaved: false
-    )!
-    
     init() {
-        engine.attach(playerNode)
-        engine.connect(playerNode, to: engine.mainMixerNode, format: format)
-        engine.prepare()
-        try? engine.start()
-        playerNode.play()
+        self.format = .init(
+            commonFormat: .pcmFormatInt16,
+            sampleRate: 24000,
+            channels: 1,
+            interleaved: false
+        )
+        self.engine.attach(self.playerNode)
+        self.engine.connect(self.playerNode, to: self.engine.mainMixerNode, format: self.format)
+        self.engine.prepare()
+        
+        do {
+            try self.engine.start()
+        } catch {
+            //MARK: not sure to do about it yet
+        }
     }
     
     func queue(audio data: Data) async {
@@ -94,6 +99,10 @@ actor StreamingAudioPlayer {
         let tailN = min(crossfadeSamples, count)
         previousTail = Array(UnsafeBufferPointer(start: buffer.int16ChannelData![0], count: count).suffix(tailN))
         
+        if !playerNode.isPlaying {
+            self.playerNode.play()
+        }
+        
         await playerNode.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack)
     }
     
@@ -105,7 +114,7 @@ actor StreamingAudioPlayer {
         return totalDuration
     }
     
-    func getCurrentElapsedTime() -> TimeInterval? {
+    private func getCurrentElapsedTime() -> TimeInterval? {
         guard
             let nodeTime = playerNode.lastRenderTime,
             let playerTime = playerNode.playerTime(forNodeTime: nodeTime)
@@ -113,10 +122,18 @@ actor StreamingAudioPlayer {
         
         return Double(playerTime.sampleTime) / playerTime.sampleRate
     }
-    
+  
     func wordStream(words: [String], audio data: Data) -> AsyncStream<Int> {
         let totalDuration = duration(of: data)
-        let baseWordDuration = totalDuration / Double(max(words.count, 1))
+        let totalNumberOfLetters = Double(words.reduce(0) { $0 + $1.count }) + Double(words.count - 1)
+        let baseLetterDuration = totalDuration / totalNumberOfLetters
+        let wordDurations = words.map {
+            if words.last == $0 {
+                Double($0.count) * baseLetterDuration
+            } else {
+                Double($0.count+1) * baseLetterDuration
+            }
+        }
         
         return AsyncStream { continuation in
             Task { [weak self] in
@@ -143,7 +160,16 @@ actor StreamingAudioPlayer {
                     }
 
                     let relativeTime = elapsedSeconds - chunkStartTime!
-                    let index = Int(relativeTime / baseWordDuration)
+                    
+                    var index: Int = 0
+                    var sum: Double = 0
+                    for duration in wordDurations {
+                        index += 1
+                        sum += duration
+                        if sum >= relativeTime {
+                            break
+                        }
+                    }
 
                     if previousIndex != index && index < words.count {
                         previousIndex = index
@@ -155,7 +181,7 @@ actor StreamingAudioPlayer {
                         break
                     }
 
-                    try? await Task.sleep(for: .milliseconds(50))
+                    try? await Task.sleep(for: .milliseconds(25))
                 }
             }
         }

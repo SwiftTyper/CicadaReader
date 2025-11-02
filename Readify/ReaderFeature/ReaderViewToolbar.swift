@@ -32,7 +32,7 @@ struct ReaderViewToolbar: ToolbarContent {
             Button {
                 vm.toggleAutoRead()
             } label: {
-                Image(systemName: (vm.status == .reading && vm.status == .loading) ? "pause.fill" : "play.fill")
+                Image(systemName: (vm.status == .reading || vm.status == .loading) ? "pause.fill" : "play.fill")
             }
             .contentTransition(.symbolEffect(.replace))
             .disabled(vm.status == .preparing)

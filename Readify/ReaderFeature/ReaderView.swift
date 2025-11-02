@@ -18,26 +18,28 @@ struct ReaderView: View {
     }
 
     var body: some View {
-        ScrollView {
-            TextComposerView(
-                words: book.content.words,
-                currentWordIndex: vm.currentWordIndex
-            )
-        }
-        .scrollPosition($scrollPosition, anchor: .center)
-        .onChange(of: vm.currentWordIndex) { _, newValue in
-            withAnimation {
-                self.scrollPosition = .init(id: String(newValue))
+        NavigationStack {
+            ScrollView {
+                TextComposerView(
+                    words: book.content.words,
+                    currentWordIndex: vm.currentWordIndex
+                )
             }
+            .scrollPosition($scrollPosition, anchor: .center)
+            .onChange(of: vm.currentWordIndex) { _, newValue in
+                withAnimation {
+                    self.scrollPosition = .init(id: String(newValue))
+                }
+            }
+            .onAppear {
+                self.scrollPosition = .init(id: String(vm.currentWordIndex))
+            }
+            .loader(self.vm.status == .loading || self.vm.status == .preparing, isFullScreen: self.vm.status == .preparing)
+            .task { await self.vm.setup() }
+            .navigationTitle(book.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ReaderViewToolbar(vm: vm) }
         }
-        .onAppear {
-            self.scrollPosition = .init(id: String(vm.currentWordIndex))
-        }
-        .loader(self.vm.status == .loading || self.vm.status == .preparing, isFullScreen: self.vm.status == .preparing)
-        .task { await self.vm.setup() }
-        .navigationTitle(book.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ReaderViewToolbar(vm: vm) }
     }
 }
 

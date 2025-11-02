@@ -76,7 +76,6 @@ class ReaderViewModel {
             group.addTask {
                 let stream = await self.player.wordStream(words: chunk.content.words, audio: chunk.audioData)
                 for await wordIndex in stream {
-                    print(wordIndex)
                     await self.setWordIndex(value: wordIndex + chunkStartIndex)
                 }
             }
