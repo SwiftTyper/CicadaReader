@@ -18,6 +18,7 @@ class ReaderViewModel {
     
     private let text: String
     private var currentTask: Task<Void, Never>?
+    private var chunker: TextChunker
     
     var status: ReaderStatus = .idle
     var currentWordIndex: Int = 0
@@ -28,18 +29,19 @@ class ReaderViewModel {
         bufferAhead: Int = 2,
     ) {
         self.text = text
-        let chunker = TextChunker(text: text)
+        let textChunker = TextChunker(text: text)
+        self.chunker = textChunker
         self.synthesizer = synthesizer
+        self.player = .init()
         self.synthQueue = AsyncBuffer(
             targetSize: bufferAhead,
             produce: {
-                let text = try await chunker.getNext()
+                let text = try await textChunker.getNext()
                 try Task.checkCancellation()
                 let audio = try await synthesizer.synthesize(text: text)
                 return SynthesizedChunk(content: text, audioData: audio)
             }
         )
-        self.player = .init()
     }
 
     func setup() async {
@@ -55,6 +57,10 @@ class ReaderViewModel {
     func toggleAutoRead() {
         self.status.toggle()
         
+        if self.status == .restartable {
+            
+        }
+        
         if self.status == .reading {
             self.currentTask = Task {
                 do {
@@ -62,18 +68,23 @@ class ReaderViewModel {
                 } catch is CancellationError  {
                     self.status = .idle
                 } catch is TextChunker.ChunkingError {
-                    self.status = .idle
-                    //change the button to restart
+                    self.status = .restartable
                 } catch {
                     //show error
                 }
             }
         } else if self.status == .idle {
+            print(self.text.words[currentWordIndex])
             self.currentTask?.cancel()
+            Task {
+                await self.synthQueue.reset()
+                await self.chunker.rechunk(basedOn: text, and: currentWordIndex)
+            }
         }
     }
 
     private func read() async throws {
+        print(self.text.words[currentWordIndex])
         self.status = .loading
         let chunk: SynthesizedChunk = try await self.synthQueue.next()
         self.status = .reading

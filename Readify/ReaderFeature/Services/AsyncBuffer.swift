@@ -53,6 +53,10 @@ actor AsyncBuffer<T> {
 //                }
 //            }
         }
+        
+        if Task.isCancelled {
+            cancel()
+        }
     }
 
     private func append(_ item: T) {
@@ -62,5 +66,12 @@ actor AsyncBuffer<T> {
     func cancel() {
         fillTask?.cancel()
         fillTask = nil
+    }
+    
+    func reset() {
+        //to check if fillTask is needed
+        fillTask?.cancel()
+        fillTask = nil
+        buffer = []
     }
 }

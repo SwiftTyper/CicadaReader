@@ -11,6 +11,16 @@ import SwiftUI
 struct ReaderViewToolbar: ToolbarContent {
     let vm: ReaderViewModel
     
+    var symbolName: String {
+        if vm.status == .reading || vm.status == .loading {
+            "pause.fill"
+        } else if vm.status == .restartable {
+            "arrow.counterclockwise"
+        } else {
+            "play.fill"
+        }
+    }
+    
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
@@ -32,7 +42,7 @@ struct ReaderViewToolbar: ToolbarContent {
             Button {
                 vm.toggleAutoRead()
             } label: {
-                Image(systemName: (vm.status == .reading || vm.status == .loading) ? "pause.fill" : "play.fill")
+                Image(systemName: symbolName)
             }
             .contentTransition(.symbolEffect(.replace))
             .disabled(vm.status == .preparing)

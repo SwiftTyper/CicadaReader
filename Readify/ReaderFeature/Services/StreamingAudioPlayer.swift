@@ -9,7 +9,6 @@ import Foundation
 import AVFoundation
 import SwiftUI
 import Accelerate
-import TTSFeature
 
 actor StreamingAudioPlayer {
     private let engine = AVAudioEngine()
@@ -57,6 +56,7 @@ actor StreamingAudioPlayer {
             _ = await playerNode.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack)
         } onCancel: {
             self.playerNode.stop()
+            self.playerNode.reset()
         }
     }
     

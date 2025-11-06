@@ -9,19 +9,25 @@ import Foundation
 import NaturalLanguage
 
 actor TextChunker {
-    private var currentIndex: Int = 0
-    nonisolated private let chunks: [String]
+    private var chunkIndex: Int = 0
+    private var chunks: [String]
 
     init(text: String) {
         self.chunks = TextChunker.makeChunks(from: text)
     }
-
+    
+    func rechunk(basedOn fullText: String, and wordIndex: Int) {
+        self.chunkIndex = 0
+        let newText = fullText.slice(afterWordIndex: wordIndex)
+        self.chunks = TextChunker.makeChunks(from: newText)
+    }
+    
     func getNext() throws -> String {
-        guard currentIndex < chunks.count
+        guard chunkIndex < chunks.count
         else { throw ChunkingError.runOutOfChunks }
 
-        let string = chunks[currentIndex]
-        currentIndex += 1
+        let string = chunks[chunkIndex]
+        chunkIndex += 1
         return string
     }
 
@@ -53,4 +59,21 @@ actor TextChunker {
     enum ChunkingError: Error {
         case runOutOfChunks
     }
+}
+
+extension String {
+    func slice(afterWordIndex n: Int) -> String {
+         let pattern = #"\S+"#
+         guard let regex = try? NSRegularExpression(pattern: pattern) else { return "" }
+         let fullRange = NSRange(startIndex..., in: self)
+         let matches = regex.matches(in: self, range: fullRange)
+         
+         guard matches.indices.contains(n + 1),
+               let range = Range(matches[n + 1].range, in: self)
+         else {
+             return ""
+         }
+
+         return String(self[range.lowerBound...])
+     }
 }

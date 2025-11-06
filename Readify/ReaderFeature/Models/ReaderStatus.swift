@@ -12,6 +12,7 @@ enum ReaderStatus {
     case idle
     case loading
     case preparing
+    case restartable
     
     mutating func toggle() {
         if self == .reading {
