@@ -17,7 +17,7 @@ enum ReaderStatus {
     mutating func toggle() {
         if self == .reading {
             self = .idle
-        } else {
+        } else if self == .idle {
             self = .reading
         }
     }

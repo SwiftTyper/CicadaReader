@@ -42,6 +42,7 @@ actor AsyncBuffer<T> {
 //                for _ in 0..<needed {
 //                    group.addTask {
             guard let produce = try? await self.produce() else { return }
+            guard Task.isCancelled == false else { return }
             self.append(produce)
             //sth might be wrong here
                     
@@ -53,21 +54,12 @@ actor AsyncBuffer<T> {
 //                }
 //            }
         }
-        
-        if Task.isCancelled {
-            cancel()
-        }
     }
 
     private func append(_ item: T) {
         buffer.append(item)
     }
 
-    func cancel() {
-        fillTask?.cancel()
-        fillTask = nil
-    }
-    
     func reset() {
         //to check if fillTask is needed
         fillTask?.cancel()

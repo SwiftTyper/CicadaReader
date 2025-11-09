@@ -36,6 +36,7 @@ class ReaderViewModel {
         self.synthQueue = AsyncBuffer(
             targetSize: bufferAhead,
             produce: {
+                try Task.checkCancellation()
                 let text = try await textChunker.getNext()
                 try Task.checkCancellation()
                 let audio = try await synthesizer.synthesize(text: text)
@@ -58,33 +59,44 @@ class ReaderViewModel {
         self.status.toggle()
         
         if self.status == .restartable {
-            
+            self.cancelRead()
+            self.setWordIndex(value: 0)
+            self.status = .reading
         }
         
         if self.status == .reading {
-            self.currentTask = Task {
-                do {
-                    try await read()
-                } catch is CancellationError  {
-                    self.status = .idle
-                } catch is TextChunker.ChunkingError {
-                    self.status = .restartable
-                } catch {
-                    //show error
-                }
-            }
+            startRead()
         } else if self.status == .idle {
             print(self.text.words[currentWordIndex])
-            self.currentTask?.cancel()
-            Task {
-                await self.synthQueue.reset()
-                await self.chunker.rechunk(basedOn: text, and: currentWordIndex)
+            cancelRead()
+        }
+    }
+    
+    private func startRead() {
+        self.currentTask = Task {
+            do {
+                try await read()
+            } catch is CancellationError  {
+                self.status = .idle
+            } catch is TextChunker.ChunkingError {
+                self.status = .restartable
+            } catch {
+                //show error
             }
+        }
+    }
+    
+    private func cancelRead() {
+        self.currentTask?.cancel()
+        Task {
+            await self.synthQueue.reset()
+            await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
         }
     }
 
     private func read() async throws {
-        print(self.text.words[currentWordIndex])
+        guard Task.isCancelled == false else { return }
+        
         self.status = .loading
         let chunk: SynthesizedChunk = try await self.synthQueue.next()
         self.status = .reading
@@ -109,6 +121,7 @@ class ReaderViewModel {
     
     @MainActor
     private func setWordIndex(value: Int) {
+        print(value)
         self.currentWordIndex = value
     }
 }
@@ -135,7 +148,26 @@ extension ReaderViewModel {
             from: self.text
         )
         guard let start else { return }
-        self.currentWordIndex = start
+        
+        if self.status == .reading || self.status == .restartable {
+            self.currentTask?.cancel()
+            self.currentTask = Task {
+                await synthQueue.reset()
+                await setWordIndex(value: start)
+                await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
+                do {
+                    try await read()
+                } catch is CancellationError  {
+                    self.status = .idle
+                } catch is TextChunker.ChunkingError {
+                    self.status = .restartable
+                } catch {
+                    //show error
+                }
+            }
+        } else if self.status == .idle {
+            self.currentWordIndex = start
+        }
     }
 
     func stepForward() {
@@ -144,6 +176,25 @@ extension ReaderViewModel {
             from: self.text
         )
         guard let end = end else { return }
-        self.currentWordIndex = end
+
+        if self.status == .reading || self.status == .restartable {
+            self.currentTask?.cancel()
+            self.currentTask = Task {
+                await synthQueue.reset()
+                await setWordIndex(value: end)
+                await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
+                do {
+                    try await read()
+                } catch is CancellationError  {
+                    self.status = .idle
+                } catch is TextChunker.ChunkingError {
+                    self.status = .restartable
+                } catch {
+                    //show error
+                }
+            }
+        } else if self.status == .idle {
+            self.currentWordIndex = end
+        }
     }
 }

@@ -16,13 +16,13 @@ struct LoaderView: ViewModifier {
     func body(content: Content) -> some View {
         if isActive && isFullScreen {
             ProgressView(label)
-        } else if isActive {
-            content
-                .overlay {
-                   ProgressView(label)
-                }
         } else {
             content
+                .overlay {
+                    if isActive {
+                        ProgressView(label)
+                    }
+                }
         }
     }
 }

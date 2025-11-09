@@ -61,7 +61,7 @@ actor TextChunker {
     }
 }
 
-extension String {
+private extension String {
     func slice(afterWordIndex n: Int) -> String {
          let pattern = #"\S+"#
          guard let regex = try? NSRegularExpression(pattern: pattern) else { return "" }
