@@ -32,7 +32,7 @@ struct ImportView: View {
                 Spacer()
             }
             .navigationDestination(item: $book) { book in
-                ReaderView(book: book, synthesizer: .init())
+//                ReaderView(book: book, synthesizer: .init())
             }
             .navigationTitle("Import")
         }

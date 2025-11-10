@@ -14,7 +14,7 @@ struct TextComposerView: View {
     let currentWordIndex: Int
     
     var body: some View {
-        WrappingHStack(alignment: .leading, horizontalSpacing: 0){
+        WrappingHStack(alignment: .leading, horizontalSpacing: 0) {
             ForEach(words.enumerated(), id: \.offset) { index, word in
                let isCurrent = (index == currentWordIndex)
                Text(word)

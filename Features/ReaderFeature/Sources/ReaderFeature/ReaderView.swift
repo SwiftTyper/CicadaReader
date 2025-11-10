@@ -3,13 +3,13 @@ import AVFAudio
 import SwiftUI
 import TTSFeature
 
-struct ReaderView: View {
+public struct ReaderView: View {
     @State private var vm: ReaderViewModel
     @State private var scrollPosition = ScrollPosition()
     
     private let book: Book
     
-    var alertIsPresented: Binding<Bool> {
+    private var alertIsPresented: Binding<Bool> {
         Binding {
             vm.errorMessage != nil
         } set: { value in
@@ -18,7 +18,7 @@ struct ReaderView: View {
         }
     }
     
-    init(
+    public init(
         book: Book,
         synthesizer: TtSManager,
     ) {
@@ -26,7 +26,7 @@ struct ReaderView: View {
         self._vm = State(wrappedValue: ReaderViewModel(synthesizer: synthesizer, text: book.content))
     }
 
-    var body: some View {
+    public var body: some View {
         NavigationStack {
             ScrollView {
                 TextComposerView(

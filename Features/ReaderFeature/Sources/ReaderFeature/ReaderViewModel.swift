@@ -10,6 +10,7 @@ import Observation
 import SwiftUI
 @preconcurrency import TTSFeature
 
+@MainActor
 @Observable
 class ReaderViewModel {
     private let synthesizer: TtSManager
@@ -47,15 +48,16 @@ class ReaderViewModel {
     }
 
     func setup() async {
-        self.status = .preparing
+        await self.setStatus(.preparing)
         do {
             try await synthesizer.initialize()
         } catch {
-            self.status = .idle
+            await self.setStatus(.idle)
         }
-        self.status = .idle
+        await self.setStatus(.idle)
     }
     
+    @MainActor
     func toggleAutoRead() {
         self.status.toggle()
         
@@ -85,11 +87,11 @@ class ReaderViewModel {
     private func read() async {
         do {
             while !Task.isCancelled {
-                self.status = .loading
+                await self.setStatus(.loading)
                 let chunk: SynthesizedChunk = try await self.synthQueue.next()
-                self.status = .reading
+                await self.setStatus(.reading)
                 
-                let chunkStartIndex = self.currentWordIndex
+                let chunkStartIndex = await self.getWordIndex()
                 
                 await withDiscardingTaskGroup { group in
                     group.addTask {
@@ -105,12 +107,17 @@ class ReaderViewModel {
                 }
             }
         } catch is CancellationError  {
-            self.setStatus(.idle)
+            await self.setStatus(.idle)
         } catch is TextChunker.ChunkingError {
-            self.setStatus(.restartable)
+            await self.setStatus(.restartable)
         } catch {
-            self.errorMessage = error.localizedDescription
+            await self.setError(error.localizedDescription)
         }
+    }
+    
+    @MainActor
+    func setError(_ value: String) {
+        self.errorMessage = value
     }
     
     @MainActor
@@ -124,24 +131,30 @@ class ReaderViewModel {
         print(value)
         self.currentWordIndex = value
     }
+    
+    @MainActor
+    private func getWordIndex() -> Int {
+        self.currentWordIndex
+    }
 }
 
 //MARK: Forward & Reverse Actions
 extension ReaderViewModel {
-    var canStepBack: Bool {
+    @MainActor var canStepBack: Bool {
         TextService().startOfPreviousSentence(
             wordIndex: self.currentWordIndex,
             from: self.text
         ) != nil
     }
     
-    var canStepForward: Bool {
+    @MainActor var canStepForward: Bool {
         TextService().startOfNextSentence(
             wordIndex: self.currentWordIndex,
             from: self.text
         ) != nil
     }
 
+    @MainActor
     func skip(_ direction: SkipDirection) {
         let start: Int?
         if direction == .forward {
