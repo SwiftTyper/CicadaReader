@@ -9,6 +9,16 @@ import Foundation
 import SwiftUI
 import TTSFeature
 
+struct Book: Hashable {
+    let title: String
+    let content: String
+    
+    init(title: String = "", content: String) {
+        self.title = title
+        self.content = content
+    }
+}
+
 struct ImportView: View {
     @State private var book: Book? = nil
 

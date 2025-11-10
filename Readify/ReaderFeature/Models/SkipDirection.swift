@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Book: Codable, Hashable {
-    let title: String = "Untitled"
-    let content: String
+enum SkipDirection {
+    case forward
+    case backward
 }

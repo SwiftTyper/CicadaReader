@@ -46,7 +46,7 @@ class ReaderViewModel {
                 
                 let text = try await textChunker.getNext()
                 try Task.checkCancellation()
-                let audio = try await synthesizer.synthesize(text: text)
+                let audio: Data = try await synthesizer.synthesize(text: text)
                 return SynthesizedChunk(content: text, audioData: audio)
             }
         )
@@ -67,27 +67,24 @@ class ReaderViewModel {
         
         if self.status == .restartable {
             self.setWordIndex(0)
-            self.status = .reading
-            
             self.currentTask = Task {
                 await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
                 await read()
             }
+            return
         }
         
         if self.status == .reading {
             let previousTask = self.currentTask
             previousTask?.cancel()
-            self.currentTask = Task {
+            self.currentTask = Task { [previousTask] in
                 _ = await previousTask?.value
+                await self.synthQueue.reset()
+                await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
                 await read()
             }
         } else if self.status == .idle {
             self.currentTask?.cancel()
-            Task {
-                await self.synthQueue.reset()
-                await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
-            }
         }
     }
     
@@ -173,7 +170,7 @@ extension ReaderViewModel {
                 _ = await previousTask?.value
                 await synthQueue.reset()
                 setWordIndex(start)
-                await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
+                await self.chunker.rechunk(basedOn: self.text, and: start)
                 await read()
             }
               
@@ -181,9 +178,4 @@ extension ReaderViewModel {
             self.currentWordIndex = start
         }
     }
-}
-
-enum SkipDirection {
-    case forward
-    case backward
 }
