@@ -13,13 +13,13 @@ actor TextChunker {
     private var chunks: [String]
 
     init(text: String) {
-        self.chunks = TextChunker.makeChunks(from: text)
+        self.chunks = text.makeChunks()
     }
     
     func rechunk(basedOn fullText: String, and wordIndex: Int) {
         self.chunkIndex = 0
         let newText = fullText.slice(afterWordIndex: wordIndex)
-        self.chunks = TextChunker.makeChunks(from: newText)
+        self.chunks =  newText.makeChunks()
     }
     
     func getNext() throws -> String {
@@ -31,12 +31,19 @@ actor TextChunker {
         return string
     }
 
-    private static nonisolated func makeChunks(from text: String) -> [String] {
+    enum ChunkingError: Error {
+        case runOutOfChunks
+    }
+}
+
+private extension String {
+    nonisolated func makeChunks() -> [String] {
+        let text = self
         let tokenizer = NLTokenizer(unit: .sentence)
         tokenizer.string = text
-
+        
         var sentences: [Substring] = []
-
+        
         tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
             let sentence = text[range]
             if !sentence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -44,7 +51,7 @@ actor TextChunker {
             }
             return true
         }
-
+        
         var output: [String] = []
         var i = 0
         while i < sentences.count {
@@ -55,14 +62,8 @@ actor TextChunker {
         }
         return output
     }
-
-    enum ChunkingError: Error {
-        case runOutOfChunks
-    }
-}
-
-private extension String {
-    func slice(afterWordIndex n: Int) -> String {
+    
+    nonisolated func slice(afterWordIndex n: Int) -> String {
          let pattern = #"\S+"#
          guard let regex = try? NSRegularExpression(pattern: pattern) else { return "" }
          let fullRange = NSRange(startIndex..., in: self)

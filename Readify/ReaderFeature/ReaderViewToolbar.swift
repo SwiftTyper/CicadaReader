@@ -24,14 +24,14 @@ struct ReaderViewToolbar: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
-                vm.stepBack()
+                vm.skip(.backward)
             } label: {
                 Image(systemName: "arrow.uturn.backward")
             }
             .disabled(!vm.canStepBack)
             
             Button {
-                vm.stepForward()
+                vm.skip(.forward)
             } label: {
                 Image(systemName: "arrow.uturn.forward")
             }

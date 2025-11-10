@@ -8,20 +8,21 @@
 import Foundation
 import Observation
 import SwiftUI
-import TTSFeature
+@preconcurrency import TTSFeature
 
 @Observable
 class ReaderViewModel {
     private let synthesizer: TtSManager
     private let player: StreamingAudioPlayer
     private let synthQueue: AsyncBuffer<SynthesizedChunk>
-    
-    private let text: String
+    private let chunker: TextChunker
+
     private var currentTask: Task<Void, Never>?
-    private var chunker: TextChunker
+    private let text: String
     
-    var status: ReaderStatus = .idle
-    var currentWordIndex: Int = 0
+    @MainActor var status: ReaderStatus = .idle
+    @MainActor var currentWordIndex: Int = 0
+    @MainActor var errorMessage: String? = nil
 
     init(
         synthesizer: TtSManager,
@@ -35,8 +36,14 @@ class ReaderViewModel {
         self.player = .init()
         self.synthQueue = AsyncBuffer(
             targetSize: bufferAhead,
-            produce: {
+            produce: { [weak textChunker, weak synthesizer] in
                 try Task.checkCancellation()
+                
+                guard
+                    let textChunker = textChunker,
+                    let synthesizer = synthesizer
+                else { throw CancellationError() }
+                
                 let text = try await textChunker.getNext()
                 try Task.checkCancellation()
                 let audio = try await synthesizer.synthesize(text: text)
@@ -59,68 +66,70 @@ class ReaderViewModel {
         self.status.toggle()
         
         if self.status == .restartable {
-            self.cancelRead()
-            self.setWordIndex(value: 0)
+            self.setWordIndex(0)
             self.status = .reading
+            
+            self.currentTask = Task {
+                await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
+                await read()
+            }
         }
         
         if self.status == .reading {
-            startRead()
+            let previousTask = self.currentTask
+            previousTask?.cancel()
+            self.currentTask = Task {
+                _ = await previousTask?.value
+                await read()
+            }
         } else if self.status == .idle {
-            print(self.text.words[currentWordIndex])
-            cancelRead()
-        }
-    }
-    
-    private func startRead() {
-        self.currentTask = Task {
-            do {
-                try await read()
-            } catch is CancellationError  {
-                self.status = .idle
-            } catch is TextChunker.ChunkingError {
-                self.status = .restartable
-            } catch {
-                //show error
+            self.currentTask?.cancel()
+            Task {
+                await self.synthQueue.reset()
+                await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
             }
         }
     }
     
-    private func cancelRead() {
-        self.currentTask?.cancel()
-        Task {
-            await self.synthQueue.reset()
-            await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
-        }
-    }
-
-    private func read() async throws {
-        guard Task.isCancelled == false else { return }
-        
-        self.status = .loading
-        let chunk: SynthesizedChunk = try await self.synthQueue.next()
-        self.status = .reading
-        
-        let chunkStartIndex = self.currentWordIndex
-        
-        await withDiscardingTaskGroup { group in
-            group.addTask {
-                await self.player.queue(audio: chunk.audioData)
-            }
-            
-            group.addTask {
-                let stream = await self.player.wordStream(words: chunk.content.words, audio: chunk.audioData)
-                for await wordIndex in stream {
-                    await self.setWordIndex(value: wordIndex + chunkStartIndex)
+    private func read() async {
+        do {
+            while !Task.isCancelled {
+                self.status = .loading
+                let chunk: SynthesizedChunk = try await self.synthQueue.next()
+                self.status = .reading
+                
+                let chunkStartIndex = self.currentWordIndex
+                
+                await withDiscardingTaskGroup { group in
+                    group.addTask {
+                        await self.player.queue(audio: chunk.audioData)
+                    }
+                    
+                    group.addTask {
+                        let stream = await self.player.wordStream(words: chunk.content.words, audio: chunk.audioData)
+                        for await wordIndex in stream {
+                            await self.setWordIndex(wordIndex + chunkStartIndex)
+                        }
+                    }
                 }
             }
+        } catch is CancellationError  {
+            self.setStatus(.idle)
+        } catch is TextChunker.ChunkingError {
+            self.setStatus(.restartable)
+        } catch {
+            self.errorMessage = error.localizedDescription
         }
-       
-        try await self.read()
     }
     
     @MainActor
-    private func setWordIndex(value: Int) {
+    private func setStatus(_ value: ReaderStatus) {
+        print(value)
+        self.status = value
+    }
+    
+    @MainActor
+    private func setWordIndex(_ value: Int) {
         print(value)
         self.currentWordIndex = value
     }
@@ -142,59 +151,39 @@ extension ReaderViewModel {
         ) != nil
     }
 
-    func stepBack() {
-        let start = TextService().startOfPreviousSentence(
-            wordIndex: self.currentWordIndex,
-            from: self.text
-        )
+    func skip(_ direction: SkipDirection) {
+        let start: Int?
+        if direction == .forward {
+            start = TextService().startOfNextSentence(
+                wordIndex: self.currentWordIndex,
+                from: self.text
+            )
+        } else {
+            start = TextService().startOfPreviousSentence(
+                wordIndex: self.currentWordIndex,
+                from: self.text
+            )
+        }
         guard let start else { return }
         
-        if self.status == .reading || self.status == .restartable {
-            self.currentTask?.cancel()
-            self.currentTask = Task {
+        if self.status == .reading || self.status == .loading {
+            let previousTask = self.currentTask
+            previousTask?.cancel()
+            self.currentTask = Task { [previousTask] in
+                _ = await previousTask?.value
                 await synthQueue.reset()
-                await setWordIndex(value: start)
+                setWordIndex(start)
                 await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
-                do {
-                    try await read()
-                } catch is CancellationError  {
-                    self.status = .idle
-                } catch is TextChunker.ChunkingError {
-                    self.status = .restartable
-                } catch {
-                    //show error
-                }
+                await read()
             }
-        } else if self.status == .idle {
+              
+        } else if self.status == .idle || self.status == .restartable {
             self.currentWordIndex = start
         }
     }
+}
 
-    func stepForward() {
-        let end = TextService().startOfNextSentence(
-            wordIndex: self.currentWordIndex,
-            from: self.text
-        )
-        guard let end = end else { return }
-
-        if self.status == .reading || self.status == .restartable {
-            self.currentTask?.cancel()
-            self.currentTask = Task {
-                await synthQueue.reset()
-                await setWordIndex(value: end)
-                await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
-                do {
-                    try await read()
-                } catch is CancellationError  {
-                    self.status = .idle
-                } catch is TextChunker.ChunkingError {
-                    self.status = .restartable
-                } catch {
-                    //show error
-                }
-            }
-        } else if self.status == .idle {
-            self.currentWordIndex = end
-        }
-    }
+enum SkipDirection {
+    case forward
+    case backward
 }

@@ -99,17 +99,23 @@ public final class TtSManager {
         guard isInitialized else {
             throw TTSError.modelNotFound("Kokoro model not initialized")
         }
-
+        
+        try Task.checkCancellation()
         try await prepareLexiconAssetsIfNeeded()
 
         let preprocessing = TtsTextPreprocessor.preprocessDetailed(text)
         let cleanedText = try KokoroSynthesizer.sanitizeInput(preprocessing.text)
         let selectedVoice = resolveVoice(voice, speakerId: speakerId)
+        
+        try Task.checkCancellation()
         try await ensureVoiceEmbeddingIfNeeded(for: selectedVoice)
 
+        try Task.checkCancellation()
         return try await KokoroSynthesizer.withLexiconAssets(lexiconAssets) {
-            try await KokoroSynthesizer.withModelCache(modelCache) {
-                try await KokoroSynthesizer.synthesizeDetailed(
+            try Task.checkCancellation()
+            return try await KokoroSynthesizer.withModelCache(modelCache) {
+                try Task.checkCancellation()
+                return try await KokoroSynthesizer.synthesizeDetailed(
                     text: cleanedText,
                     voice: selectedVoice,
                     voiceSpeed: voiceSpeed,

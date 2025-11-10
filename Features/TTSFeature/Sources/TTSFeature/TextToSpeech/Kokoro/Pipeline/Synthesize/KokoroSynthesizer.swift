@@ -238,9 +238,11 @@ public struct KokoroSynthesizer {
             throw TTSError.processingFailed("No input IDs generated for chunk: \(chunk.words.joined(separator: " "))")
         }
 
+        try Task.checkCancellation()
         let kokoro = try await model(for: variant)
 
         let refShape: [NSNumber] = [1, NSNumber(value: referenceVector.count)]
+        try Task.checkCancellation()
         let refStyle = try await multiArrayPool.rent(
             shape: refShape,
             dataType: .float32,
@@ -322,6 +324,7 @@ public struct KokoroSynthesizer {
 
         let predictionStart = Date()
         let output: MLFeatureProvider
+        try Task.checkCancellation()
         do {
             output = try await kokoro.compatPrediction(from: modelInput, options: MLPredictionOptions())
         } catch {
@@ -435,22 +438,31 @@ public struct KokoroSynthesizer {
             logger.info("Variant preference requested: automatic")
         }
 
+        try Task.checkCancellation()
         try await ensureRequiredFiles()
         if !isVoiceEmbeddingPayloadCached(for: voice) {
             try? await TtsResourceDownloader.ensureVoiceEmbedding(voice: voice)
         }
 
+        try Task.checkCancellation()
         try await loadModel(variant: variantPreference)
 
+        try Task.checkCancellation()
         try await loadSimplePhonemeDictionary()
 
+        try Task.checkCancellation()
         try await validateTextHasDictionaryCoverage(text)
 
+        try Task.checkCancellation()
         let modelCache = try currentModelCache()
+        try Task.checkCancellation()
         let vocabulary = try await KokoroVocabulary.shared.getVocabulary()
+        try Task.checkCancellation()
         let capacities = try await capacities(for: variantPreference)
+        try Task.checkCancellation()
         let lexiconMetrics = await lexiconCache.metrics()
 
+        try Task.checkCancellation()
         let chunks = try await chunkText(
             text,
             vocabulary: vocabulary,
@@ -474,6 +486,7 @@ public struct KokoroSynthesizer {
             let predictionTime: TimeInterval
         }
 
+        try Task.checkCancellation()
         let embeddingDimension = try await modelCache.referenceEmbeddingDimension()
         let embeddingCache = try prepareVoiceEmbeddingCache(
             voice: voice,
@@ -484,6 +497,7 @@ public struct KokoroSynthesizer {
         let totalChunks = entries.count
         let groupedByTargetTokens = Dictionary(grouping: entries, by: { $0.template.targetTokens })
         let phasesShape: [NSNumber] = [1, 9]
+        try Task.checkCancellation()
         try await multiArrayPool.preallocate(
             shape: phasesShape,
             dataType: .float32,
@@ -492,6 +506,7 @@ public struct KokoroSynthesizer {
         )
         for (targetTokens, group) in groupedByTargetTokens {
             let shape: [NSNumber] = [1, NSNumber(value: targetTokens)]
+            try Task.checkCancellation()
             try await multiArrayPool.preallocate(
                 shape: shape,
                 dataType: .int32,
@@ -500,6 +515,7 @@ public struct KokoroSynthesizer {
             )
         }
         let refShape: [NSNumber] = [1, NSNumber(value: embeddingDimension)]
+        try Task.checkCancellation()
         try await multiArrayPool.preallocate(
             shape: refShape,
             dataType: .float32,
@@ -517,6 +533,8 @@ public struct KokoroSynthesizer {
 
         let chunkOutputs = try await withThrowingTaskGroup(of: ChunkSynthesisResult.self) { group in
             for (index, entry) in entries.enumerated() {
+                try Task.checkCancellation()
+                
                 let chunk = entry.chunk
                 let inputIds = entry.inputIds
                 let template = entry.template
@@ -533,6 +551,9 @@ public struct KokoroSynthesizer {
                     Self.logger.info("Chunk \(chunkIndex + 1) text: '\(template.text)'")
                     Self.logger.info(
                         "Chunk \(chunkIndex + 1) using Kokoro \(variantDescription(template.variant)) model")
+                    
+                    try Task.checkCancellation()
+                    
                     let (chunkSamples, predictionTime) = try await synthesizeChunk(
                         chunk,
                         inputIds: inputIds,
@@ -549,6 +570,7 @@ public struct KokoroSynthesizer {
             var results: [ChunkSynthesisResult] = []
             results.reserveCapacity(totalChunks)
             for try await result in group {
+                try Task.checkCancellation()
                 results.append(result)
             }
             return results

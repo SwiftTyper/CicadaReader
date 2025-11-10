@@ -55,17 +55,24 @@ actor StreamingAudioPlayer {
         await withTaskCancellationHandler {
             _ = await playerNode.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack)
         } onCancel: {
-            self.playerNode.stop()
-            self.playerNode.reset()
+            Task { await self.cancel() }
         }
     }
     
+    private func cancel() {
+        self.playerNode.stop()
+    }
+
     private func stripWavHeader(_ data: Data) -> Data {
         if data.prefix(4) == Data("RIFF".utf8) {
             return data.dropFirst(44)
         } else {
             return data
         }
+    }
+    
+    private func isPlaying() -> Bool {
+        return playerNode.isPlaying
     }
 }
 
@@ -92,10 +99,10 @@ extension StreamingAudioPlayer {
                 var chunkStartTime: TimeInterval? = nil
                 var previousIndex: Int? = nil
 
-                while true {
+                while !Task.isCancelled {
                     guard
-                        await playerNode.isPlaying,
-                        let elapsedSeconds = await getCurrentElapsedTime()
+                        await self.isPlaying(),
+                        let elapsedSeconds = await self.getCurrentElapsedTime()
                     else {
                         try? await Task.sleep(for: .milliseconds(50))
                         continue

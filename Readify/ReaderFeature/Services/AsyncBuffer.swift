@@ -1,12 +1,3 @@
-//
-//  AsyncBuffer.swift
-//  Readify
-//
-//  Created by Wit Owczarek on 01/11/2025.
-//
-
-import Foundation
-
 actor AsyncBuffer<T> {
     private var buffer: [T] = []
     private var fillTask: Task<Void, Never>? = nil
@@ -19,39 +10,29 @@ actor AsyncBuffer<T> {
     }
 
     func next() async throws -> T {
+        try Task.checkCancellation()
+        
         if buffer.isEmpty {
             let item = try await produce()
-            append(item)
+            buffer.append(item)
         }
-
+        
         let item = buffer.removeFirst()
-        
         startBackgroundRefill()
-        
         return item
     }
 
     private func startBackgroundRefill() {
-//        guard fillTask == nil || fillTask?.isCancelled == true else { return }
-        
+        fillTask?.cancel()
+        fillTask = nil
+
         guard buffer.count < targetSize else { return }
-//        let needed = targetSize - buffer.count
-        
+
         fillTask = Task {
-//            try? await withThrowingTaskGroup(of: T.self) { group in
-//                for _ in 0..<needed {
-//                    group.addTask {
-            guard let produce = try? await self.produce() else { return }
+//            while buffer.count < targetSize && !Task.isCancelled {
             guard Task.isCancelled == false else { return }
-            self.append(produce)
-            //sth might be wrong here
-                    
-//                    }
-//                }
-//
-//                for try await newItem in group {
-//                    self.append(newItem)
-//                }
+            guard let newItem = try? await self.produce() else { return }
+            append(newItem)
 //            }
         }
     }
@@ -61,9 +42,8 @@ actor AsyncBuffer<T> {
     }
 
     func reset() {
-        //to check if fillTask is needed
         fillTask?.cancel()
         fillTask = nil
-        buffer = []
+        buffer.removeAll()
     }
 }
