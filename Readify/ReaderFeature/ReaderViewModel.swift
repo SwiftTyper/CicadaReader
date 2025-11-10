@@ -36,14 +36,8 @@ class ReaderViewModel {
         self.player = .init()
         self.synthQueue = AsyncBuffer(
             targetSize: bufferAhead,
-            produce: { [weak textChunker, weak synthesizer] in
+            produce: {
                 try Task.checkCancellation()
-                
-                guard
-                    let textChunker = textChunker,
-                    let synthesizer = synthesizer
-                else { throw CancellationError() }
-                
                 let text = try await textChunker.getNext()
                 try Task.checkCancellation()
                 let audio: Data = try await synthesizer.synthesize(text: text)

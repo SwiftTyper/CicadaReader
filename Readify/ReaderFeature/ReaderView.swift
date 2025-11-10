@@ -9,6 +9,15 @@ struct ReaderView: View {
     
     private let book: Book
     
+    var alertIsPresented: Binding<Bool> {
+        Binding {
+            vm.errorMessage != nil
+        } set: { value in
+            guard value == false else { return }
+            vm.errorMessage = nil
+        }
+    }
+    
     init(
         book: Book,
         synthesizer: TtSManager,
@@ -37,6 +46,12 @@ struct ReaderView: View {
             .navigationTitle(book.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ReaderViewToolbar(vm: vm) }
+            .alert(
+                "Something went wrong!",
+                isPresented: alertIsPresented,
+                actions: {},
+                message: { Text(vm.errorMessage ?? "Please contact support")}
+            )
             .loader(
                 self.vm.status == .loading || self.vm.status == .preparing,
                 isFullScreen: self.vm.status == .preparing
@@ -55,9 +70,4 @@ struct ReaderView: View {
     NavigationStack {
         ReaderView(book: sample, synthesizer: .init())
     }
-}
-
-struct SynthesizedChunk {
-    let content: String
-    let audioData: Data
 }

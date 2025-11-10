@@ -21,6 +21,16 @@ struct ReaderViewToolbar: ToolbarContent {
         }
     }
     
+    var title: String {
+        if vm.status == .reading || vm.status == .loading {
+            "Pause"
+        } else if vm.status == .restartable {
+            "Restart"
+        } else {
+            "Play"
+        }
+    }
+    
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
@@ -42,9 +52,15 @@ struct ReaderViewToolbar: ToolbarContent {
             Button {
                 vm.toggleAutoRead()
             } label: {
-                Image(systemName: symbolName)
+                HStack {
+                    Image(systemName: symbolName)
+                        .contentTransition(.symbolEffect(.replace))
+                    Text(title)
+                        .font(.headline.bold())
+                }
+                .frame(width: 90)
+                .transition(.blurReplace)
             }
-            .contentTransition(.symbolEffect(.replace))
             .disabled(vm.status == .preparing)
         }
     }
