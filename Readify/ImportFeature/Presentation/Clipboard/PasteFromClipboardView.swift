@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-struct PasteImportView: View {
+struct PasteFromClipboardView: View {
     @State private var showError: Bool = false
 
     let action: (String) -> ()
@@ -23,7 +23,6 @@ struct PasteImportView: View {
         } label: {
             Text("Paste from clipboard")
         }
-        .buttonStyle(.bordered)
         .alert("Nothing to paste", isPresented: $showError) {
             Button("OK", role: .cancel) { }
         }
