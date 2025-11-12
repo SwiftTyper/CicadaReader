@@ -8,12 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		3D22CA5C2EC2919B00168669 /* ReaderFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D22CA5B2EC2919B00168669 /* ReaderFeature */; };
+		3D22CA8C2EC5365600168669 /* ImportFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D22CA8B2EC5365600168669 /* ImportFeature */; };
 		3DC0B6EB2EAE4EC00007C299 /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B6EA2EAE4EC00007C299 /* WrappingHStack */; };
 		3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		3D22CA742EC2951600168669 /* ReaderApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReaderApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DE754432EA58152008F4E9A /* Readify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Readify.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -31,17 +31,11 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		3D22CA712EC2951600168669 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		3DE754402EA58152008F4E9A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D22CA8C2EC5365600168669 /* ImportFeature in Frameworks */,
 				3DC0B6EB2EAE4EC00007C299 /* WrappingHStack in Frameworks */,
 				3D22CA5C2EC2919B00168669 /* ReaderFeature in Frameworks */,
 				3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */,
@@ -72,7 +66,6 @@
 			isa = PBXGroup;
 			children = (
 				3DE754432EA58152008F4E9A /* Readify.app */,
-				3D22CA742EC2951600168669 /* ReaderApp.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,25 +73,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		3D22CA732EC2951600168669 /* ReaderApp */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 3D22CA7C2EC2951700168669 /* Build configuration list for PBXNativeTarget "ReaderApp" */;
-			buildPhases = (
-				3D22CA702EC2951600168669 /* Sources */,
-				3D22CA712EC2951600168669 /* Frameworks */,
-				3D22CA722EC2951600168669 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = ReaderApp;
-			packageProductDependencies = (
-			);
-			productName = ReaderApp;
-			productReference = 3D22CA742EC2951600168669 /* ReaderApp.app */;
-			productType = "com.apple.product-type.application";
-		};
 		3DE754422EA58152008F4E9A /* Readify */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3DE7544E2EA58153008F4E9A /* Build configuration list for PBXNativeTarget "Readify" */;
@@ -119,6 +93,7 @@
 				3DC0B6EA2EAE4EC00007C299 /* WrappingHStack */,
 				3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */,
 				3D22CA5B2EC2919B00168669 /* ReaderFeature */,
+				3D22CA8B2EC5365600168669 /* ImportFeature */,
 			);
 			productName = Readify;
 			productReference = 3DE754432EA58152008F4E9A /* Readify.app */;
@@ -134,9 +109,6 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
-					3D22CA732EC2951600168669 = {
-						CreatedOnToolsVersion = 26.1;
-					};
 					3DE754422EA58152008F4E9A = {
 						CreatedOnToolsVersion = 26.0;
 					};
@@ -160,19 +132,11 @@
 			projectRoot = "";
 			targets = (
 				3DE754422EA58152008F4E9A /* Readify */,
-				3D22CA732EC2951600168669 /* ReaderApp */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		3D22CA722EC2951600168669 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		3DE754412EA58152008F4E9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -183,13 +147,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		3D22CA702EC2951600168669 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		3DE7543F2EA58152008F4E9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -200,72 +157,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		3D22CA7D2EC2951700168669 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9S3338F94S;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.swifttyper.ReaderApp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		3D22CA7E2EC2951700168669 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9S3338F94S;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.swifttyper.ReaderApp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		3DE7544C2EA58153008F4E9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -456,15 +347,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		3D22CA7C2EC2951700168669 /* Build configuration list for PBXNativeTarget "ReaderApp" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				3D22CA7D2EC2951700168669 /* Debug */,
-				3D22CA7E2EC2951700168669 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		3DE7543E2EA58152008F4E9A /* Build configuration list for PBXProject "Readify" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -500,6 +382,10 @@
 		3D22CA5B2EC2919B00168669 /* ReaderFeature */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ReaderFeature;
+		};
+		3D22CA8B2EC5365600168669 /* ImportFeature */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ImportFeature;
 		};
 		3DC0B6EA2EAE4EC00007C299 /* WrappingHStack */ = {
 			isa = XCSwiftPackageProductDependency;

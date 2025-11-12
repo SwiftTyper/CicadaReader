@@ -8,10 +8,15 @@
 import Foundation
 import SwiftUI
 
+public protocol Content {
+    var title: String? { get }
+    var content: String { get }
+}
+
 public struct ImportView: View {
-    private let onImport: (Book) -> Void
+    private let onImport: (Content) -> Void
     
-    public init(onImport: @escaping (Book) -> Void) {
+    public init(onImport: @escaping (Content) -> Void) {
         self.onImport = onImport
     }
 
@@ -27,9 +32,9 @@ public struct ImportView: View {
             
             HStack {
                 PasteFromClipboardView { string in
-                    self.onImport(.init(content: string))
+                    self.onImport(ImportContent(title: nil, content: string))
                 }
-                .buttonStyle(.importStyle(symbol: "clipboard"))
+                .buttonStyle(.importStyle(symbol: "list.clipboard.fill"))
                 
                 ImportFromPDFView { file in
                     self.onImport(file)

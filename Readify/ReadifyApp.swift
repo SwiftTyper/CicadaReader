@@ -11,7 +11,7 @@ import SwiftUI
 struct ReadifyApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ComposerView()
         }
     }
 }

@@ -13,7 +13,7 @@ struct ImportFromPDFView: View {
     @State private var isFilePickerShown: Bool = false
     @State private var vm: ImportFromPDFViewModel = .init()
     
-    let action: (Book) -> Void
+    let action: (ImportContent) -> Void
     
     var body: some View {
         Button {

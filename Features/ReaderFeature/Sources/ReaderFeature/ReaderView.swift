@@ -3,11 +3,21 @@ import AVFAudio
 import SwiftUI
 import TTSFeature
 
+public struct ReaderContent: Hashable {
+    public init(title: String?, content: String) {
+        self.title = title ?? "Untitled"
+        self.content = content
+    }
+    
+    let title: String
+    let content: String
+}
+
 public struct ReaderView: View {
     @State private var vm: ReaderViewModel
     @State private var scrollPosition = ScrollPosition()
     
-    private let book: Book
+    private let book: ReaderContent
     
     private var alertIsPresented: Binding<Bool> {
         Binding {
@@ -19,7 +29,7 @@ public struct ReaderView: View {
     }
     
     public init(
-        book: Book,
+        book: ReaderContent,
         synthesizer: TtSManager,
     ) {
         self.book = book
@@ -65,7 +75,7 @@ public struct ReaderView: View {
     let text = """
     This is a sample book content. It has multiple words and sentences to demonstrate the reader view. Try changing the speed or auto-reading to see the word highlight move. This is a sample book content. It has multiple words and sentences to demonstrate the reader view. Try changing the speed or auto-reading to see the word highlight move. This is a sample book content. It has multiple words and sentences to demonstrate the reader view. Try changing the speed or auto-reading to see the word highlight move. This is a sample book content. It has multiple words and sentences to demonstrate the reader view. Try changing the speed or auto-reading to see the word highlight move.
     """
-    let sample = Book(content: text)
+    let sample = ReaderContent(title: nil, content: text)
 
     NavigationStack {
         ReaderView(book: sample, synthesizer: .init())

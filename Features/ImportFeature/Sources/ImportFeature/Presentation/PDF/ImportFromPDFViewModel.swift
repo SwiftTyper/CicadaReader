@@ -17,7 +17,7 @@ class ImportFromPDFViewModel {
 
     @ObservationIgnored private var currentTask: Task<Void, Never>? = nil
     
-    func onResult(_ result: Result<[URL], Error>, action: @escaping (Book) -> Void) {
+    func onResult(_ result: Result<[URL], Error>, action: @escaping (ImportContent) -> Void) {
         self.isLoading = true
         
         switch result {
@@ -35,7 +35,7 @@ class ImportFromPDFViewModel {
         }
     }
     
-    private func startBookImport(urls: [URL], action: @escaping (Book) -> Void) async {
+    private func startBookImport(urls: [URL], action: @escaping (ImportContent) -> Void) async {
         guard let url = urls.first else {
             self.errorMessage = "No PDF file found."
             self.isLoading = false
@@ -58,7 +58,7 @@ class ImportFromPDFViewModel {
         action(book)
     }
     
-    private func getBook(from url: URL) async -> Book? {
+    private func getBook(from url: URL) async -> ImportContent? {
         guard let document = PDFDocument(url: url) else { return nil }
         
         url.stopAccessingSecurityScopedResource()
@@ -84,6 +84,6 @@ class ImportFromPDFViewModel {
         
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        return Book(title: title, content: trimmed)
+        return ImportContent(title: title, content: trimmed)
     }
 }
