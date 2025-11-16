@@ -8,11 +8,6 @@
 import Foundation
 import SwiftUI
 
-public protocol Content {
-    var title: String? { get }
-    var content: String { get }
-}
-
 public struct ImportView: View {
     private let onImport: (Content) -> Void
     
@@ -32,7 +27,7 @@ public struct ImportView: View {
             
             HStack {
                 PasteFromClipboardView { string in
-                    self.onImport(ImportContent(title: nil, content: string))
+//                    self.onImport(ImportContent(title: nil, content: string))
                 }
                 .buttonStyle(.importStyle(symbol: "list.clipboard.fill"))
                 

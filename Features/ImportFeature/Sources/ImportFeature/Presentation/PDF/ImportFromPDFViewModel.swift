@@ -61,29 +61,37 @@ class ImportFromPDFViewModel {
     private func getBook(from url: URL) async -> ImportContent? {
         guard let document = PDFDocument(url: url) else { return nil }
         
-        url.stopAccessingSecurityScopedResource()
-        
         let title = document.documentAttributes?[PDFDocumentAttribute.titleAttribute] as? String
         ?? url.deletingPathExtension().lastPathComponent
         
         let pageCount = document.pageCount
         
-        let fullText = await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                var result = ""
-                for i in 0..<pageCount {
-                    guard Task.isCancelled == false else { return }
-                    if let text = document.page(at: i)?.string {
-                        result += text + "\n\n"
-                    }
+        let tempURL = FileManager.default
+              .temporaryDirectory
+              .appendingPathComponent(UUID().uuidString)
+              .appendingPathExtension("txt")
+
+        FileManager.default.createFile(atPath: tempURL.path, contents: nil)
+        
+        guard let handle = try? FileHandle(forWritingTo: tempURL) else { return nil }
+        
+        await withCheckedContinuation { continuation in
+            for i in 0..<pageCount {
+                guard Task.isCancelled == false else { return }
+                if
+                    let text = document.page(at: i)?.string,
+                    let data = (text + "\n\n").data(using: .utf8)
+                {
+                    try? handle.write(contentsOf: data)
                 }
-                result = result.trimmingCharacters(in: .whitespacesAndNewlines)
-                continuation.resume(returning: result)
             }
+            continuation.resume()
         }
+
+        try? handle.close()
+
+        url.stopAccessingSecurityScopedResource()
         
-        let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        return ImportContent(title: title, content: trimmed)
+        return ImportContent(title: title, url: tempURL)
     }
 }

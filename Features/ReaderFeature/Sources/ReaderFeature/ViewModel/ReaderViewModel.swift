@@ -17,39 +17,51 @@ class ReaderViewModel {
     private let player: StreamingAudioPlayer
     private let synthQueue: AsyncBuffer<SynthesizedChunk>
     private let chunker: TextChunker
+    private let textLoader: TextLoader
 
     private var currentTask: Task<Void, Never>?
-    private let text: String
     
     @MainActor var status: ReaderStatus = .idle
     @MainActor var currentWordIndex: Int = 0
     @MainActor var errorMessage: String? = nil
+    @MainActor var text: String = ""
 
     init(
         synthesizer: TtSManager,
-        text: String,
+        contentUrl: URL,
         bufferAhead: Int = 2,
     ) {
-        self.text = text
-        let textChunker = TextChunker(text: text)
-        self.chunker = textChunker
+        self.textLoader = TextLoader(url: contentUrl)
+//        let textChunker = TextChunker(text: text)
+        self.chunker = TextChunker(text: "wtf is this ")
         self.synthesizer = synthesizer
         self.player = .init()
         self.synthQueue = AsyncBuffer(
             targetSize: bufferAhead,
             produce: {
-                try Task.checkCancellation()
-                let text = try await textChunker.getNext()
-                try Task.checkCancellation()
-                let audio: Data = try await synthesizer.synthesize(text: text)
-                return SynthesizedChunk(content: text, audioData: audio)
+                return .init(content: "", audioData: Data())
+//                try Task.checkCancellation()
+//                let text = try await textChunker.getNext()
+//                try Task.checkCancellation()
+//                let audio: Data = try await synthesizer.synthesize(text: text)
+//                return SynthesizedChunk(content: text, audioData: audio)
             }
         )
+    }
+    
+    func onScrollChange(_ progress: Double) async {
+        guard
+            progress > 0.75,
+            let text = try? await textLoader.nextChunk()
+        else { return }
+        
+        self.text += text
     }
 
     func setup() async {
         await self.setStatus(.preparing)
         do {
+            self.text = try await textLoader.nextChunk()
             try await synthesizer.initialize()
         } catch {
             await self.setStatus(.idle)
@@ -108,7 +120,7 @@ class ReaderViewModel {
             }
         } catch is CancellationError  {
             await self.setStatus(.idle)
-        } catch is TextChunker.ChunkingError {
+        } catch is ChunkingError {
             await self.setStatus(.restartable)
         } catch {
             await self.setError(error.localizedDescription)

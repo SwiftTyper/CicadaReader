@@ -11,7 +11,7 @@ import NaturalLanguage
 actor TextChunker {
     private var chunkIndex: Int = 0
     private var chunks: [String]
-
+    
     init(text: String) {
         self.chunks = text.makeChunks()
     }
@@ -29,10 +29,6 @@ actor TextChunker {
         let string = chunks[chunkIndex]
         chunkIndex += 1
         return string
-    }
-
-    enum ChunkingError: Error {
-        case runOutOfChunks
     }
 }
 

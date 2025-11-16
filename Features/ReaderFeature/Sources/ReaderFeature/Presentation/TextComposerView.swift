@@ -7,35 +7,54 @@
 
 import Foundation
 import SwiftUI
-import WrappingHStack
+import UIKit
 
-struct TextComposerView: View {
-    let words: [String]
-    let currentWordIndex: Int
-    
-    var body: some View {
-        WrappingHStack(alignment: .leading, horizontalSpacing: 0) {
-            ForEach(words.enumerated(), id: \.offset) { index, word in
-               let isCurrent = (index == currentWordIndex)
-               Text(word)
-                    .opacity(isCurrent ? 0 : 1)
-                    .fontDesign(.serif)
-                    .font(.body)
-                    .padding(3)
-                    .padding(.horizontal, 2)
-                    .background {
-                        RoundedRectangle(cornerRadius: 8)
-                            .foregroundStyle(isCurrent ? Color.yellow.opacity(0.35) : Color.clear)
-                            .overlay {
-                                Text(word)
-                                    .fontDesign(.serif)
-                                    .bold(isCurrent)
-                                    .opacity(isCurrent ? 1 : 0)
-                            }
-                    }
-                    .id(String(index))
-           }
+func layoutWords(
+    words: [String],
+    font: UIFont,
+    width: CGFloat
+) -> [[Int]] {
+    let full = words.joined(separator: " ")
+
+    let storage = NSTextStorage(string: full, attributes: [
+        .font: font
+    ])
+
+    let container = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
+    container.lineFragmentPadding = 0
+
+    let manager = NSLayoutManager()
+    manager.addTextContainer(container)
+    storage.addLayoutManager(manager)
+
+    // Force layout
+    _ = manager.glyphRange(for: container)
+
+    var lines: [[Int]] = []
+
+    var currentLine: Int = -1
+
+    var wordStartIndex = 0
+
+    for (wordIndex, word) in words.enumerated() {
+        let range = NSRange(location: wordStartIndex, length: word.count)
+
+        var glyphRange = NSRange()
+        manager.characterRange(forGlyphRange: range, actualGlyphRange: &glyphRange)
+
+        let rect = manager.boundingRect(forGlyphRange: glyphRange, in: container)
+
+        let thisLine = Int(rect.minY / font.lineHeight)
+
+        if thisLine != currentLine {
+            lines.append([])
+            currentLine = thisLine
         }
-        .padding(.horizontal)
+
+        lines[currentLine].append(wordIndex)
+        
+        wordStartIndex += word.count + 1
     }
+
+    return lines
 }

@@ -19,7 +19,7 @@ struct ImportFromPDFView: View {
         Button {
             self.isFilePickerShown = true
         } label: {
-            Text("Upload .PDF File")
+            Text("Upload a .PDF File")
         }
         .overlay {
             if self.vm.isLoading { ProgressView() }
