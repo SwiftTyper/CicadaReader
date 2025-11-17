@@ -11,8 +11,8 @@ import SwiftUI
 struct LazyTextView: View {
     let rows: [[Int]]
     let words: [String]
-    let currentWordIndex: Int
-    let onScrollChange: (Int) -> Void
+    let wordIndex: Int
+    let loadMoreCallback: () -> Void
     
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
@@ -21,13 +21,13 @@ struct LazyTextView: View {
                     ForEach(rows[rowIndex], id: \.self) { w in
                         Text(words[w])
                             .background(
-                                w == currentWordIndex ? Color.yellow.opacity(0.4) : Color.clear
+                                w == wordIndex ? Color.yellow.opacity(0.4) : Color.clear
                             )
                     }
                 }
                 .onAppear {
-                    if rowIndex > Int(Double(rows.count) * 0.8) {
-                        onScrollChange(rowIndex)
+                    if rowIndex > max(rows.count - 20, 0) {
+                        loadMoreCallback()
                     }
                 }
                 .id(rowIndex)

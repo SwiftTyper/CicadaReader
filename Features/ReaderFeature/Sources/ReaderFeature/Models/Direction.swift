@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum SkipDirection {
+enum Direction {
     case forward
     case backward
 }

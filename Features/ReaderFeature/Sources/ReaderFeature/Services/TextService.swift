@@ -8,48 +8,58 @@
 import Foundation
 import NaturalLanguage
 
-//MARK: To Do: stop the enumartion once we find the sentecse we are looking for
-
 struct TextService {
-    func startOfPreviousSentence(wordIndex: Int, from text: String) -> Int? {
-        let boundaries = sentenceBoundaries(for: text)
-        guard
-            let current = boundaries.first(where: { $0.start <= wordIndex && $0.end >= wordIndex }),
-            let currentIndex = boundaries.firstIndex(where: { $0 == current }),
-            currentIndex > 0
-        else { return nil }
-        return boundaries[currentIndex - 1].start
-    }
-    
-    func startOfNextSentence(wordIndex: Int, from text: String) -> Int? {
-        let boundaries = sentenceBoundaries(for: text)
-        guard
-            let current = boundaries.first(where: { $0.start <= wordIndex && $0.end >= wordIndex }),
-            let currentIndex = boundaries.firstIndex(where: { $0 == current }),
-            currentIndex < boundaries.count - 1
-        else { return nil }
-        return boundaries[currentIndex + 1].start
-    }
-
-    private func sentenceBoundaries(for text: String) -> [(start: Int, end: Int)] {
+    /// Scans sentence-by-sentence, stops as soon as the answer is known.
+    static func findSentenceBoundary(
+        wordIndex: Int,
+        in text: String,
+        direction: Direction
+    ) -> Int? {
         let tokenizer = NLTokenizer(unit: .sentence)
         tokenizer.string = text
-        var boundaries: [(Int, Int)] = []
+        
+        var currStart = 0
+        var prevStart: Int?
+        var currEnd: Int?
+        var foundCurrent = false
 
-        var wordStartIndex = 0
-        tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
-            let sentence = text[range]
-            let sentenceWordCount = String(sentence).words.count
-            guard sentenceWordCount > 0 else {
-                return true
+        let _ = tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
+            let sentenceText = String(text[range])
+            let wordCount = sentenceText.words.count
+            
+            if wordCount == 0 { return true }
+            
+            let start = currStart
+            let end = currStart + wordCount - 1
+
+            if !foundCurrent {
+                if start <= wordIndex && end >= wordIndex {
+                    currStart = start
+                    currEnd = end
+                    foundCurrent = true
+
+                    if direction == .backward {
+                        return false
+                    }
+                } else {
+                    prevStart = start
+                }
+            } else {
+                if direction == .forward {
+                    currStart = start
+                    return false
+                }
             }
-            let start = wordStartIndex
-            let end = wordStartIndex + sentenceWordCount - 1
-            boundaries.append((start, end))
-            wordStartIndex = end + 1
+
+            currStart = end + 1
             return true
         }
 
-        return boundaries
+        switch direction {
+            case .backward:
+                return prevStart
+            case .forward:
+                return currStart == currEnd ? nil : currStart
+        }
     }
 }

@@ -49,12 +49,8 @@ class ReaderViewModel {
         )
     }
     
-    func onScrollChange(_ progress: Double) async {
-        guard
-            progress > 0.75,
-            let text = try? await textLoader.nextChunk()
-        else { return }
-        
+    func onScrollChange() async {
+        guard let text = try? await textLoader.nextChunk() else { return }
         self.text += text
     }
 
@@ -153,34 +149,28 @@ class ReaderViewModel {
 //MARK: Forward & Reverse Actions
 extension ReaderViewModel {
     @MainActor var canStepBack: Bool {
-        TextService().startOfPreviousSentence(
+       TextService.findSentenceBoundary(
             wordIndex: self.currentWordIndex,
-            from: self.text
+            in: self.text,
+            direction: .backward
         ) != nil
     }
     
     @MainActor var canStepForward: Bool {
-        TextService().startOfNextSentence(
-            wordIndex: self.currentWordIndex,
-            from: self.text
-        ) != nil
+        TextService.findSentenceBoundary(
+             wordIndex: self.currentWordIndex,
+             in: self.text,
+             direction: .forward
+         ) != nil
     }
 
     @MainActor
-    func skip(_ direction: SkipDirection) {
-        let start: Int?
-        if direction == .forward {
-            start = TextService().startOfNextSentence(
-                wordIndex: self.currentWordIndex,
-                from: self.text
-            )
-        } else {
-            start = TextService().startOfPreviousSentence(
-                wordIndex: self.currentWordIndex,
-                from: self.text
-            )
-        }
-        guard let start else { return }
+    func skip(_ direction: Direction) {
+        guard let start = TextService.findSentenceBoundary(
+            wordIndex: self.currentWordIndex,
+            in: self.text,
+            direction: direction
+        ) else { return }
         
         if self.status == .reading || self.status == .loading {
             let previousTask = self.currentTask

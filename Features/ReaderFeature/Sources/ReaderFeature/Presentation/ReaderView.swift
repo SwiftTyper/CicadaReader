@@ -1,5 +1,4 @@
 import Foundation
-import AVFAudio
 import SwiftUI
 import TTSFeature
 
@@ -32,18 +31,13 @@ public struct ReaderView: View {
 
     public var body: some View {
         NavigationStack {
-            GeometryReader { geo in
-                LazyReaderView(
-                   text: vm.text,
-                   currentWordIndex: vm.currentWordIndex,
-                   width: geo.size.width,
-                   onScrollPositionChange: { progress in
-                       Task {
-                           await self.vm.onScrollChange(1)
-                       }
-                   }
-               )
-            }
+            LazyScrollableTextView(
+               text: vm.text,
+               wordIndex: vm.currentWordIndex,
+               loadMoreCallback: {
+                   Task { await self.vm.onScrollChange() }
+               }
+           )
             .navigationTitle(content.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ReaderViewToolbar(vm: vm) }
