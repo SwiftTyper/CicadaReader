@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		3D22CA5C2EC2919B00168669 /* ReaderFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D22CA5B2EC2919B00168669 /* ReaderFeature */; };
 		3D22CA8C2EC5365600168669 /* ImportFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D22CA8B2EC5365600168669 /* ImportFeature */; };
-		3DC0B6EB2EAE4EC00007C299 /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B6EA2EAE4EC00007C299 /* WrappingHStack */; };
 		3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */; };
 /* End PBXBuildFile section */
 
@@ -36,7 +35,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D22CA8C2EC5365600168669 /* ImportFeature in Frameworks */,
-				3DC0B6EB2EAE4EC00007C299 /* WrappingHStack in Frameworks */,
 				3D22CA5C2EC2919B00168669 /* ReaderFeature in Frameworks */,
 				3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */,
 			);
@@ -90,7 +88,6 @@
 			);
 			name = Readify;
 			packageProductDependencies = (
-				3DC0B6EA2EAE4EC00007C299 /* WrappingHStack */,
 				3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */,
 				3D22CA5B2EC2919B00168669 /* ReaderFeature */,
 				3D22CA8B2EC5365600168669 /* ImportFeature */,
@@ -124,7 +121,6 @@
 			mainGroup = 3DE7543A2EA58152008F4E9A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				3DC0B6E92EAE4EC00007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3DE754442EA58152008F4E9A /* Products */;
@@ -367,17 +363,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		3DC0B6E92EAE4EC00007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ksemianov/WrappingHStack";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.2.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
 		3D22CA5B2EC2919B00168669 /* ReaderFeature */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -386,11 +371,6 @@
 		3D22CA8B2EC5365600168669 /* ImportFeature */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ImportFeature;
-		};
-		3DC0B6EA2EAE4EC00007C299 /* WrappingHStack */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3DC0B6E92EAE4EC00007C299 /* XCRemoteSwiftPackageReference "WrappingHStack" */;
-			productName = WrappingHStack;
 		};
 		3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */ = {
 			isa = XCSwiftPackageProductDependency;

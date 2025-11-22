@@ -26,8 +26,8 @@ public struct ImportView: View {
                 .foregroundStyle(.secondary)
             
             HStack {
-                PasteFromClipboardView { string in
-//                    self.onImport(ImportContent(title: nil, content: string))
+                PasteFromClipboardView { fileUrl in
+                    self.onImport(ImportContent(title: nil, url: fileUrl))
                 }
                 .buttonStyle(.importStyle(symbol: "list.clipboard.fill"))
                 

@@ -23,23 +23,26 @@ struct LazyScrollableTextView: View {
                         rows: cache.rows,
                         words: text.words,
                         wordIndex: wordIndex,
-                        loadMoreCallback: loadMoreCallback
+                        loadMoreCallback: loadMoreCallback,
+                        spaceWidth: cache.spaceWidth(),
+                        font: .preferredFont(forTextStyle: .body)
                     )
-                    .padding(.horizontal)
+                    .padding(.horizontal, 16)
                 }
                 .onAppear {
-                    cache.updateIfNeeded(text: text, width: geo.size.width)
+                    cache.updateIfNeeded(text: text, width: geo.size.width - 32)
                 }
                 .onChange(of: text) { _, newText in
-                    cache.updateIfNeeded(text: newText, width: geo.size.width)
+                    cache.updateIfNeeded(text: newText, width: geo.size.width - 32)
                 }
                 .onChange(of: geo.size.width) { _, newWidth in
                     cache.updateIfNeeded(text: text, width: newWidth)
                 }
                 .onChange(of: wordIndex) { _, newIndex in
                     guard let rowIndex = cache.dic[newIndex] else { return }
+                    
                     DispatchQueue.main.async {
-                        withAnimation {
+                        withAnimation(.linear(duration: 0.5)){
                             proxy.scrollTo(rowIndex, anchor: .center)
                         }
                     }

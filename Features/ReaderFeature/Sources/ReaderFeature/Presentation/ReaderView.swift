@@ -52,6 +52,7 @@ public struct ReaderView: View {
                 isFullScreen: self.vm.status == .preparing
             )
             .task { await self.vm.setup() }
+            .onDisappear() { self.vm.cancel() }
         }
     }
 }

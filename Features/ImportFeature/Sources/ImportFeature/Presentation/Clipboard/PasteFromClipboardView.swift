@@ -11,12 +11,23 @@ import SwiftUI
 struct PasteFromClipboardView: View {
     @State private var showError: Bool = false
 
-    let action: (String) -> ()
+    let action: (URL) -> ()
 
     var body: some View {
         Button {
             if let text = UIPasteboard.general.string, !text.isEmpty {
-                action(text)
+                do {
+                    let tempURL = FileManager.default
+                          .temporaryDirectory
+                          .appendingPathComponent(UUID().uuidString)
+                          .appendingPathExtension("txt")
+                    
+                    try text.write(to: tempURL, atomically: true, encoding: .utf8)
+                    
+                    action(tempURL)
+                } catch {
+                    showError = true
+                }
             } else {
                 showError = true
             }

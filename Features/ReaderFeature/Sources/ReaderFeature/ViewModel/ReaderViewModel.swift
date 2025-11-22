@@ -32,32 +32,34 @@ class ReaderViewModel {
         bufferAhead: Int = 2,
     ) {
         self.textLoader = TextLoader(url: contentUrl)
-//        let textChunker = TextChunker(text: text)
-        self.chunker = TextChunker(text: "wtf is this ")
+        let textChunker = TextChunker(text: "")
+        self.chunker = textChunker
         self.synthesizer = synthesizer
         self.player = .init()
         self.synthQueue = AsyncBuffer(
             targetSize: bufferAhead,
             produce: {
-                return .init(content: "", audioData: Data())
-//                try Task.checkCancellation()
-//                let text = try await textChunker.getNext()
-//                try Task.checkCancellation()
-//                let audio: Data = try await synthesizer.synthesize(text: text)
-//                return SynthesizedChunk(content: text, audioData: audio)
+                try Task.checkCancellation()
+                let text = try await textChunker.getNext()
+                try Task.checkCancellation()
+                let audio: Data = try await synthesizer.synthesize(text: text)
+                return SynthesizedChunk(content: text, audioData: audio)
             }
         )
     }
     
+    @MainActor
     func onScrollChange() async {
         guard let text = try? await textLoader.nextChunk() else { return }
         self.text += text
     }
 
+    @MainActor
     func setup() async {
         await self.setStatus(.preparing)
         do {
             self.text = try await textLoader.nextChunk()
+            await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
             try await synthesizer.initialize()
         } catch {
             await self.setStatus(.idle)
@@ -92,6 +94,11 @@ class ReaderViewModel {
         }
     }
     
+    func cancel() {
+        self.currentTask?.cancel()
+    }
+    
+    @MainActor
     private func read() async {
         do {
             while !Task.isCancelled {
@@ -148,7 +155,8 @@ class ReaderViewModel {
 
 //MARK: Forward & Reverse Actions
 extension ReaderViewModel {
-    @MainActor var canStepBack: Bool {
+    @MainActor
+    var canStepBack: Bool {
        TextService.findSentenceBoundary(
             wordIndex: self.currentWordIndex,
             in: self.text,
@@ -156,7 +164,8 @@ extension ReaderViewModel {
         ) != nil
     }
     
-    @MainActor var canStepForward: Bool {
+    @MainActor
+    var canStepForward: Bool {
         TextService.findSentenceBoundary(
              wordIndex: self.currentWordIndex,
              in: self.text,
