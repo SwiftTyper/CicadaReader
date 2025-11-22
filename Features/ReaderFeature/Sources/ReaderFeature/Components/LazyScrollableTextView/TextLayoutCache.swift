@@ -5,10 +5,15 @@ import UIKit
 final class TextLayoutCache {
     private(set) var rows: [[Int]] = []
     private(set) var dic: [Int: Int] = [:]
-
+    private(set) var words: [String] = []
+    
     private var lastText: String = ""
     private var lastWidth: CGFloat = 0
-
+    
+    let font: UIFont = .preferredFont(forTextStyle: .body)
+    
+    var spaceWidth: CGFloat { self.spaceWidth(using: self.font) }
+    
     @MainActor
     func updateIfNeeded(
         text: String,
@@ -17,17 +22,18 @@ final class TextLayoutCache {
     ) {
         guard text != lastText || width != lastWidth else { return }
 
-        let words = text.words
+        self.words = text.words
         let newRows = layoutWords(words: words, font: font, width: width)
         let newDic = rowsToDict(newRows)
 
         self.rows = newRows
         self.dic = newDic
+        
         self.lastText = text
         self.lastWidth = width
     }
     
-    func spaceWidth(using font: UIFont = .preferredFont(forTextStyle: .body)) -> CGFloat {
+    private func spaceWidth(using font: UIFont) -> CGFloat {
         let str = " "
         let storage = NSTextStorage(string: str, attributes: [.font: font])
         let container = NSTextContainer(size: .init(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))

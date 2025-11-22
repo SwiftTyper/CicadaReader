@@ -18,8 +18,8 @@ actor TextChunker {
     
     func rechunk(basedOn fullText: String, and wordIndex: Int) {
         self.chunkIndex = 0
-        let newText = fullText.slice(afterWordIndex: wordIndex)
-        self.chunks =  newText.makeChunks()
+        let newText = fullText.slice(beforeWordIndex: wordIndex)
+        self.chunks = newText.makeChunks()
     }
     
     func getNext() throws -> String {
@@ -57,6 +57,10 @@ private extension String {
             i = j
         }
         return output
+    }
+    
+    nonisolated func slice(beforeWordIndex n: Int) -> String {
+       slice(afterWordIndex: n - 1)
     }
     
     nonisolated func slice(afterWordIndex n: Int) -> String {

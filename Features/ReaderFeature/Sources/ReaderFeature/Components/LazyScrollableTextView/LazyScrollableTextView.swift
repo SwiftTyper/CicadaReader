@@ -14,32 +14,24 @@ struct LazyScrollableTextView: View {
     let loadMoreCallback: () -> Void
 
     @State private var cache = TextLayoutCache()
-
+    
     var body: some View {
         GeometryReader { geo in
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyTextView(
-                        rows: cache.rows,
-                        words: text.words,
-                        wordIndex: wordIndex,
-                        loadMoreCallback: loadMoreCallback,
-                        spaceWidth: cache.spaceWidth(),
-                        font: .preferredFont(forTextStyle: .body)
-                    )
-                    .padding(.horizontal, 16)
+                    lazyTextView
                 }
                 .onAppear {
-                    cache.updateIfNeeded(text: text, width: geo.size.width - 32)
+                    self.cache.updateIfNeeded(text: self.text, width: geo.size.width - 32)
                 }
                 .onChange(of: text) { _, newText in
-                    cache.updateIfNeeded(text: newText, width: geo.size.width - 32)
+                    self.cache.updateIfNeeded(text: newText, width: geo.size.width - 32)
                 }
                 .onChange(of: geo.size.width) { _, newWidth in
-                    cache.updateIfNeeded(text: text, width: newWidth)
+                    self.cache.updateIfNeeded(text: self.text, width: newWidth)
                 }
                 .onChange(of: wordIndex) { _, newIndex in
-                    guard let rowIndex = cache.dic[newIndex] else { return }
+                    guard let rowIndex = self.cache.dic[newIndex] else { return }
                     
                     DispatchQueue.main.async {
                         withAnimation(.linear(duration: 0.5)){
@@ -49,5 +41,28 @@ struct LazyScrollableTextView: View {
                 }
             }
         }
+    }
+    
+    var lazyTextView: some View {
+        LazyVStack(alignment: .leading, spacing: 0) {
+            ForEach(self.cache.rows.indices, id: \.self) { rowIndex in
+                HStack(spacing: self.cache.spaceWidth) {
+                    ForEach(self.cache.rows[rowIndex], id: \.self) { w in
+                        Text(self.cache.words[w])
+                            .font(.system(size: self.cache.font.pointSize))
+                            .background(
+                                w == self.wordIndex ? Color.yellow.opacity(0.4) : Color.clear
+                            )
+                    }
+                }
+                .onAppear {
+                    if rowIndex > max(self.cache.rows.count - 20, 0) {
+                        self.loadMoreCallback()
+                    }
+                }
+                .id(rowIndex)
+            }
+        }
+        .padding(.horizontal, 16)
     }
 }

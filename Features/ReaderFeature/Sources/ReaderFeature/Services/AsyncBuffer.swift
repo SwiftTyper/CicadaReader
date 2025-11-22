@@ -29,11 +29,11 @@ actor AsyncBuffer<T> {
         guard buffer.count < targetSize else { return }
 
         fillTask = Task {
-//            while buffer.count < targetSize && !Task.isCancelled {
             guard Task.isCancelled == false else { return }
+            print("generating extra")
             guard let newItem = try? await self.produce() else { return }
+            print("extra generated")
             append(newItem)
-//            }
         }
     }
 
