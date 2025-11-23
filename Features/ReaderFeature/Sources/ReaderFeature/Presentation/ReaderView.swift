@@ -32,11 +32,11 @@ public struct ReaderView: View {
     public var body: some View {
         NavigationStack {
             LazyScrollableTextView(
-               text: vm.text,
-               wordIndex: vm.currentWordIndex,
-               loadMoreCallback: {
-                   Task { await self.vm.onScrollChange() }
-               }
+                words: vm.text.words,
+                wordIndex: vm.currentWordIndex,
+                loadMoreCallback: {
+                    Task { await self.vm.onScrollChange() }
+                }
            )
             .navigationTitle(content.title)
             .navigationBarTitleDisplayMode(.inline)
