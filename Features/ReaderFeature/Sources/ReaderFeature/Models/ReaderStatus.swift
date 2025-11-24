@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum ReaderStatus {
+enum ReaderStatus: Sendable {
     case reading
     case idle
     case loading

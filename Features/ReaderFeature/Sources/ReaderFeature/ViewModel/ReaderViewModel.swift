@@ -56,15 +56,15 @@ class ReaderViewModel {
 
     @MainActor
     func setup() async {
-        await self.setStatus(.preparing)
+        self.setStatus(.preparing)
         do {
             self.text = try await textLoader.nextChunk()
             await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
             try await synthesizer.initialize()
         } catch {
-            await self.setStatus(.idle)
+            self.setStatus(.idle)
         }
-        await self.setStatus(.idle)
+        self.setStatus(.idle)
     }
     
     @MainActor
@@ -98,19 +98,18 @@ class ReaderViewModel {
         self.currentTask?.cancel()
     }
     
-    @MainActor
     private func read() async {
         do {
             while !Task.isCancelled {
-                await self.setStatus(.loading)
+                setStatus(.loading)
                 let chunk: SynthesizedChunk = try await self.synthQueue.next()
-                await self.setStatus(.reading)
+                setStatus(.reading)
                 
-                let chunkStartIndex = await self.getWordIndex()
+                let chunkStartIndex = self.getWordIndex()
                 
                 await withDiscardingTaskGroup { group in
-                    group.addTask {
-                        await self.player.queue(audio: chunk.audioData)
+                    group.addTask { [player] in
+                        await player.queue(audio: chunk.audioData)
                     }
                     
                     group.addTask {
@@ -122,11 +121,11 @@ class ReaderViewModel {
                 }
             }
         } catch is CancellationError  {
-            await self.setStatus(.idle)
+            self.setStatus(.idle)
         } catch is ChunkingError {
-            await self.setStatus(.restartable)
+            self.setStatus(.restartable)
         } catch {
-            await self.setError(error.localizedDescription)
+            self.setError(error.localizedDescription)
         }
     }
     

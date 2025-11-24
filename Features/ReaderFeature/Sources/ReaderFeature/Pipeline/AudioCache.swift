@@ -11,17 +11,10 @@ import CryptoKit
 public struct AudioCacheKey: Hashable, Sendable {
     public let value: String
     
-    // Include all synthesis-affecting parameters here.
-    public init(text: String, voice: String?, rate: Double?, pitch: Double?, format: String) {
-        // Normalize inputs and build a deterministic string
-        let voicePart = voice ?? "defaultVoice"
+    public init(text: String, rate: Double?) {
         let ratePart = String(format: "%.3f", rate ?? 1.0)
-        let pitchPart = String(format: "%.3f", pitch ?? 0.0)
         let input = [
-            "v=\(voicePart)",
             "r=\(ratePart)",
-            "p=\(pitchPart)",
-            "fmt=\(format)",
             "text=\(text)"
         ].joined(separator: "|")
         
@@ -41,43 +34,21 @@ public actor AudioSynthesisCache {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     }
     
-    public func urlIfExists(for key: AudioCacheKey) -> URL? {
-        if let url = memoryIndex[key] { return url }
-        // We don’t know extension from key; scan for common audio extensions or a metadata sidecar.
-        // To keep it simple, assume m4a as default.
-        let candidates = ["m4a", "caf", "wav", "mp3"].map {
-            baseURL.appendingPathComponent("\(key.value).\($0)")
-        }
-        if let found = candidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }) {
-            memoryIndex[key] = found
-            return found
-        }
-        return nil
+    public func retrieveData(for key: AudioCacheKey) -> Data? {
+        guard let url = memoryIndex[key] else { return nil }
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return data
     }
     
-    @discardableResult
-    public func store(data: Data, for key: AudioCacheKey, fileExtension: String) throws -> URL {
-        let url = baseURL.appendingPathComponent("\(key.value).\(fileExtension)")
+    public func store(data: Data, for key: AudioCacheKey) throws {
+        let url = baseURL.appendingPathComponent("\(key.value).wav")
         try data.write(to: url, options: .atomic)
         memoryIndex[key] = url
-        return url
     }
     
     public func remove(for key: AudioCacheKey) throws {
-        let candidates = ["m4a", "caf", "wav", "mp3"].map {
-            baseURL.appendingPathComponent("\(key.value).\($0)")
-        }
-        for url in candidates where FileManager.default.fileExists(atPath: url.path) {
-            try FileManager.default.removeItem(at: url)
-        }
+        guard let url = memoryIndex[key] else { return }
+        try FileManager.default.removeItem(at: url)
         memoryIndex[key] = nil
-    }
-    
-    public func clearAll() throws {
-        let contents = try FileManager.default.contentsOfDirectory(at: baseURL, includingPropertiesForKeys: nil)
-        for url in contents {
-            try? FileManager.default.removeItem(at: url)
-        }
-        memoryIndex.removeAll()
     }
 }
