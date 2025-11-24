@@ -10,25 +10,48 @@ import NaturalLanguage
 
 actor TextChunker {
     private var chunkIndex: Int = 0
-    private var chunks: [String]
+    private var chunks: [String] = []
     
-    init(text: String) {
-        self.chunks = text.makeChunks()
-    }
-    
-    func rechunk(basedOn fullText: String, and wordIndex: Int) {
-        self.chunkIndex = 0
-        let newText = fullText.slice(beforeWordIndex: wordIndex)
-        self.chunks = newText.makeChunks()
+    func get(from wordIndex: Int) -> String {
+        //identify chunk in which the word index is
+        var currentWordIndex: Int = 0
+        var currentChunkIndex: Int = 0
+        for index in 0..<chunks.count {
+            let wordCount = chunks[index].words.count
+            if currentWordIndex + wordCount < wordIndex {
+                currentWordIndex += wordCount
+            } else {
+                currentChunkIndex = index
+                break
+            }
+        }
+        
+        //slice that chunk from word index to the end of the chunk
+        let chunkSlice = chunks[currentChunkIndex].slice(beforeWordIndex: wordIndex)
+        
+        //set the chunk index to the next one
+        self.chunkIndex += 1
+        
+        //return it
+        return chunkSlice
     }
     
     func getNext() throws -> String {
         guard chunkIndex < chunks.count
-        else { throw ChunkingError.runOutOfChunks }
+        else {
+            //TODO: Ask loader if there are any chunks left - should never happen
+            throw ChunkingError.runOutOfChunks
+        }
 
         let string = chunks[chunkIndex]
         chunkIndex += 1
         return string
+    }
+}
+
+extension TextChunker {
+    func compute(newText: String) {
+        self.chunks.append(contentsOf: newText.makeChunks())
     }
 }
 

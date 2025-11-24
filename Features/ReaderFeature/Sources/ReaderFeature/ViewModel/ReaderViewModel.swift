@@ -10,14 +10,75 @@ import Observation
 import SwiftUI
 @preconcurrency import TTSFeature
 
+
+//FIFO
+struct Stack<T> {
+    init() { values = [] }
+    
+    private var values: [T]
+    
+    mutating func pop() -> T? {
+        return values.remove(at: 0)
+    }
+    
+    mutating func push(_ value: T) {
+        values.append(value)
+    }
+    
+    var isEmpty: Bool {
+        values.isEmpty
+    }
+}
+
+class Pipeline {
+    init(chunker: TextChunker) {
+        self.cache = .init()
+        self.chunker = chunker
+        self.synthesizer = .init()
+    }
+    
+    private let cache: AudioSynthesisCache
+    private let chunker: TextChunker
+    private let synthesizer: TtSManager
+    
+    var buffer: Stack<SynthesizedChunk> = .init()
+    
+    func next() async throws -> SynthesizedChunk? {
+        guard buffer.isEmpty else {
+            return buffer.pop()
+        }
+        
+        //await the next value from the buffer it should be a stream
+    }
+    
+    func produce() async throws -> SynthesizedChunk {
+        try Task.checkCancellation()
+        let text = try await chunker.getNext()
+        
+        try Task.checkCancellation()
+        let cacheKey: AudioCacheKey = .init(text: text, rate: 1.0)
+        let cachedAudio: Data? = await cache.retrieveData(for: cacheKey)
+        
+        guard cachedAudio == nil else {
+            return SynthesizedChunk(content: text, audioData: cachedAudio!)
+        }
+        
+        try Task.checkCancellation()
+        let audio: Data = try await synthesizer.synthesize(text: text)
+        
+        try await cache.store(data: audio, for: cacheKey)
+        
+        return SynthesizedChunk(content: text, audioData: audio)
+    }
+}
+
 @MainActor
 @Observable
 class ReaderViewModel {
-    private let synthesizer: TtSManager
     private let player: StreamingAudioPlayer
-    private let synthQueue: AsyncBuffer<SynthesizedChunk>
-    private let chunker: TextChunker
     private let textLoader: TextLoader
+    private let pipeline: Pipeline
+//    private let synthQueue: AsyncBuffer<SynthesizedChunk>
 
     private var currentTask: Task<Void, Never>?
     
@@ -31,21 +92,10 @@ class ReaderViewModel {
         contentUrl: URL,
         bufferAhead: Int = 2,
     ) {
-        self.textLoader = TextLoader(url: contentUrl)
-        let textChunker = TextChunker(text: "")
-        self.chunker = textChunker
-        self.synthesizer = synthesizer
+        let chunker = TextChunker()
+        self.textLoader = TextLoader(url: contentUrl, chunker: chunker)
+        self.pipeline = Pipeline(chunker: chunker)
         self.player = .init()
-        self.synthQueue = AsyncBuffer(
-            targetSize: bufferAhead,
-            produce: {
-                try Task.checkCancellation()
-                let text = try await textChunker.getNext()
-                try Task.checkCancellation()
-                let audio: Data = try await synthesizer.synthesize(text: text)
-                return SynthesizedChunk(content: text, audioData: audio)
-            }
-        )
     }
     
     @MainActor
@@ -196,3 +246,6 @@ extension ReaderViewModel {
         }
     }
 }
+
+
+

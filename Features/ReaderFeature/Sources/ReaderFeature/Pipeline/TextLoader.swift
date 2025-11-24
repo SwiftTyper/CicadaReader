@@ -12,13 +12,17 @@ actor TextLoader {
     private let chunkSize = 4096
     private var offset: Int = 0
     
-    init(url: URL) {
+    var chunker: TextChunker
+    
+    init(url: URL, chunker: TextChunker) {
         self.url = url
+        self.chunker = chunker
     }
     
-    func nextChunk() throws -> String {
+    func nextChunk() async throws -> String {
         let text = try readChunk(offset: offset)
         offset += chunkSize
+        await chunker.compute(newText: text)
         return text
     }
     
