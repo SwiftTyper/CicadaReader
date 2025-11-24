@@ -11,7 +11,7 @@ import SwiftUI
 struct LazyScrollableTextView: View {
     let words: [String]
     let wordIndex: Int
-    let loadMoreCallback: () -> Void
+    let loadMoreCallback: () async -> [String]
     
     @Environment(\.verticalSizeClass) var verticalSizeClass
     
@@ -20,14 +20,14 @@ struct LazyScrollableTextView: View {
     }
     
     var body: some View {
-        WrappingHStack(0..<words.count, id: \.self, alignment: .leading, spacing: .constant(8), lineSpacing: 8, scrollToElement: wordIndex) { wordIndex in
-            let isCurrent = wordIndex == self.wordIndex
-            Text(words[wordIndex])
+        WrappingHStack(words, id: \.self, alignment: .leading, spacing: .constant(8), lineSpacing: 8, scrollToElement: wordIndex) { word, words in
+            let isCurrent = words[self.wordIndex] == word
+            Text(word)
                 .opacity(isCurrent ? 0 : 1)
                 .fontDesign(.serif)
                 .font(.body)
                 .background {
-                    Text(words[wordIndex])
+                    Text(word)
                         .fontDesign(.serif)
                         .bold(isCurrent)
                         .opacity(isCurrent ? 1 : 0)
@@ -36,11 +36,8 @@ struct LazyScrollableTextView: View {
                         .background(isCurrent ? Color.yellow.opacity(0.35) : Color.clear)
                         .clipShape(.rect(cornerRadius: 8))
                 }
-                .onAppear {
-                    if wordIndex == self.words.count - 10 {
-                        loadMoreCallback()
-                    }
-                }
+        } loadMoreData: {
+           await loadMoreCallback()
         }
         .scrollClipDisabled(true)
         .padding(.horizontal, isHorizontal ? .zero : 16)

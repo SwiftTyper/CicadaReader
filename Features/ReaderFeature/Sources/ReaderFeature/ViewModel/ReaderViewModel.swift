@@ -24,7 +24,9 @@ class ReaderViewModel {
     @MainActor var status: ReaderStatus = .idle
     @MainActor var currentWordIndex: Int = 0
     @MainActor var errorMessage: String? = nil
-    @MainActor var text: String = ""
+    @MainActor var initialWords: [String] = []
+    
+    private var text: String = ""
 
     init(
         synthesizer: TtSManager,
@@ -49,9 +51,10 @@ class ReaderViewModel {
     }
     
     @MainActor
-    func onScrollChange() async {
-        guard let text = try? await textLoader.nextChunk() else { return }
+    func onScrollChange() async -> [String] {
+        guard let text = try? await textLoader.nextChunk() else { return [] }
         self.text += text
+        return text.words
     }
 
     @MainActor
@@ -59,6 +62,7 @@ class ReaderViewModel {
         await self.setStatus(.preparing)
         do {
             self.text = try await textLoader.nextChunk()
+            self.initialWords = text.words
             await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
             try await synthesizer.initialize()
         } catch {

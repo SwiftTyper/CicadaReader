@@ -8,83 +8,130 @@
 import Foundation
 import SwiftUI
 
+enum ViewType {
+    case any(AnyView)
+
+    init<V: View>(rawView: V) {
+        switch rawView {
+        default: self = .any(AnyView(rawView))
+        }
+    }
+}
+
+private struct HeightPreferenceKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue = CGFloat.zero
+    static func reduce(value: inout CGFloat , nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+public enum Spacing {
+    case constant(CGFloat)
+    case dynamic(minSpacing: CGFloat)
+    case dynamicIncludingBorders(minSpacing: CGFloat)
+    
+    internal var minSpacing: CGFloat {
+        switch self {
+        case .constant(let constantSpacing):
+            return constantSpacing
+        case .dynamic(minSpacing: let minSpacing), .dynamicIncludingBorders(minSpacing: let minSpacing):
+            return minSpacing
+        }
+    }
+}
+
 /// This class manages content and the calculation of their widths (reusing it).
 /// It should be reused whenever possible.
-class ContentManager {
-    let items: [ViewType]
-    let getWidths: () -> [Double]
-    
-    lazy var widths: [Double] = {
-        getWidths()
-    }()
 
-    init(items: [ViewType], getWidths: @escaping () -> [Double]) {
-        self.items = items
-        self.getWidths = getWidths
+@Observable
+class ContentManager<Data: RandomAccessCollection & RangeReplaceableCollection> {
+    var data: Data
+    var widths: [Double]
+    var layout: [Int] = []
+    
+    var previousWidth: Double? = nil
+    
+    init(
+        data: Data,
+        getWidths: @escaping () -> [Double]
+    ) {
+        self.data = data
+        self.widths = getWidths()
     }
     
     func isVisible(viewIndex: Int) -> Bool {
         widths[viewIndex] > 0
     }
-   
+    
+    func calculateLayoutAppend(
+        items: Data,
+        widths: [Double],
+        previousFirstOfEach: [Int] = [],
+        previousTrailingWidth: Double? = nil,
+        width: Double,
+        spacing: Spacing
+    ) {
+        var firstOfEach = previousFirstOfEach
+        var currentWidth = previousTrailingWidth ?? width
+        
+        for index in (previousFirstOfEach.last ?? 0)..<items.count {
+            guard widths[index] > 0 else { continue }
+
+            let itemWidth = widths[index]
+
+            if currentWidth + itemWidth + spacing.minSpacing > width {
+                currentWidth = itemWidth
+                firstOfEach.append(index)
+            } else {
+                currentWidth += itemWidth + spacing.minSpacing
+            }
+        }
+        
+        self.previousWidth = currentWidth
+        self.layout = firstOfEach
+    }
 }
 
 /// This View draws the WrappingHStack content taking into account the passed width, alignment and spacings.
 /// Note that the passed LineManager and ContentManager should be reused whenever possible.
-struct InternalWrappingHStack: View {
+struct InternalWrappingHStack<Data: RandomAccessCollection & RangeReplaceableCollection, Content: View>: View {
     let width: CGFloat
     let alignment: HorizontalAlignment
-    let spacing: WrappingHStack.Spacing
+    let spacing: Spacing
     let lineSpacing: CGFloat
-    let firstItemOfEachLine: [Int]
-    let contentManager: ContentManager
+    
     let scrollToElement: Int
     let proxy: ScrollViewProxy
+    
+    let content: (Data.Element, Data) -> Content
+    let loadMoreData: () async -> Data
+    
+    @State private var isLoading: Bool = false
+    @Environment(ContentManager<Data>.self) var cache
 
     init(
         width: CGFloat,
         alignment: HorizontalAlignment,
-        spacing: WrappingHStack.Spacing,
+        spacing: Spacing,
         lineSpacing: CGFloat,
-        contentManager: ContentManager,
         scrollToElement: Int,
-        proxy: ScrollViewProxy
+        proxy: ScrollViewProxy,
+        @ViewBuilder content: @escaping (Data.Element, Data) -> Content,
+        loadMoreData: @escaping () async -> Data
     ) {
         self.width = width
         self.alignment = alignment
         self.spacing = spacing
         self.lineSpacing = lineSpacing
-        self.contentManager = contentManager
-        self.firstItemOfEachLine = {
-            var firstOfEach = [Int]()
-            var currentWidth: Double = width
-            for (index, element) in contentManager.items.enumerated() {
-                switch element {
-                case .newLine:
-                    firstOfEach += [index]
-                    currentWidth = width
-                case .any where contentManager.isVisible(viewIndex: index):
-                    let itemWidth = contentManager.widths[index]
-                    if currentWidth + itemWidth + spacing.minSpacing > width {
-                        currentWidth = itemWidth
-                        firstOfEach.append(index)
-                    } else {
-                        currentWidth += itemWidth + spacing.minSpacing
-                    }
-                default:
-                    break
-                }
-            }
-
-            return firstOfEach
-        }()
         self.scrollToElement = scrollToElement
         self.proxy = proxy
+        self.content = content
+        self.loadMoreData = loadMoreData
     }
     
     
     func rowIndex(viewIndex: Int) -> Int {
-        return max((firstItemOfEachLine.firstIndex(where: { $0 > viewIndex }) ?? 0) - 1 , 0)
+        return max((cache.layout.firstIndex(where: { $0 > viewIndex }) ?? 0) - 1 , 0)
     }
     
     func shouldHaveSideSpacers(line i: Int) -> Bool {
@@ -97,16 +144,14 @@ struct InternalWrappingHStack: View {
         return false
     }
 
-    var totalLines: Int {
-        firstItemOfEachLine.count
-    }
-
+    var totalLines: Int { cache.layout.count }
+    
     func startOf(line i: Int) -> Int {
-        firstItemOfEachLine[i]
+        cache.layout[i]
     }
 
     func endOf(line i: Int) -> Int {
-        i == totalLines - 1 ? contentManager.items.count - 1 : firstItemOfEachLine[i + 1] - 1
+        i == totalLines - 1 ? cache.data.count - 1 : cache.layout[i + 1] - 1
     }
 
     func hasExactlyOneElement(line i: Int) -> Bool {
@@ -121,19 +166,21 @@ struct InternalWrappingHStack: View {
                         Spacer(minLength: 0)
                     }
                     
-                    ForEach(startOf(line: lineIndex) ... endOf(line: lineIndex), id: \.self) {
+                    ForEach(startOf(line: lineIndex)...endOf(line: lineIndex), id: \.self) {
                         if case .dynamicIncludingBorders = spacing,
                             startOf(line: lineIndex) == $0
                         {
                             Spacer(minLength: spacing.minSpacing)
                         }
                         
-                        if case .any(let anyView) = contentManager.items[$0], contentManager.isVisible(viewIndex: $0) {
-                            anyView
+                        if cache.isVisible(viewIndex: $0) {
+                            content(cache.data[offset: $0], cache.data)
                         }
                         
                         if endOf(line: lineIndex) != $0 {
-                            if case .any = contentManager.items[$0], !contentManager.isVisible(viewIndex: $0) { } else {
+                            if !cache.isVisible(viewIndex: $0) {
+                                
+                            } else {
                                 if case .constant(let exactSpacing) = spacing {
                                     Spacer(minLength: 0)
                                         .frame(width: exactSpacing)
@@ -152,6 +199,28 @@ struct InternalWrappingHStack: View {
                 }
                 .frame(maxWidth: .infinity)
                 .id(lineIndex)
+                .task {
+                    if max(0, totalLines - 10) == lineIndex {
+                        guard !isLoading else { return }
+                        isLoading = true
+                        let newData = await loadMoreData()
+                        self.cache.data.append(contentsOf: newData)
+                        
+                        let newWidths = self.cache.data.map { Self.getWidth(of: content($0[keyPath: \.self], self.cache.data)) }
+                        self.cache.widths.append(contentsOf: newWidths)
+                        
+                        self.cache.calculateLayoutAppend(
+                            items: cache.data,
+                            widths: cache.widths,
+                            previousFirstOfEach: cache.layout,
+                            previousTrailingWidth: cache.previousWidth,
+                            width: width,
+                            spacing: spacing
+                        )
+                        
+                        isLoading = false
+                    }
+                }
             }
         }
         .onChange(of: scrollToElement) { _, newValue in
@@ -159,78 +228,42 @@ struct InternalWrappingHStack: View {
                 proxy.scrollTo(rowIndex(viewIndex: newValue), anchor: .center)
             }
         }
-    }
-}
-
-/// Use this item to force a line break in a WrappingHStack
-public struct NewLine: View {
-    public init() { }
-    public let body = Spacer(minLength: .infinity)
-}
-
-enum ViewType {
-    case any(AnyView)
-    case newLine
-
-    init<V: View>(rawView: V) {
-        switch rawView {
-        case is NewLine: self = .newLine
-        default: self = .any(AnyView(rawView))
+        .onAppear {
+            cache.calculateLayoutAppend(
+                items: cache.data,
+                widths: cache.widths,
+                width: width,
+                spacing: spacing
+            )
         }
     }
 }
 
-/// WrappingHStack is a UI Element that works in a very similar way to HStack,
-///  but automatically positions overflowing elements on next lines.
-///  It can be customized by using alignment (controls the alignment of the
-///  items, it may get ignored when combined with `dynamicIncludingBorders`
-///  or `.dynamic` spacing), spacing (use `.constant` for fixed spacing,
-///  `.dynamic` to have the items fill the width of the WrappingHSTack and
-///  `.dynamicIncludingBorders` to fill the full width with equal spacing
-///  between items and from the items to the border.) and lineSpacing (which
-///  adds a vertical separation between lines)
-public struct WrappingHStack: View {
-    private struct HeightPreferenceKey: PreferenceKey {
-        nonisolated(unsafe) static var defaultValue = CGFloat.zero
-        static func reduce(value: inout CGFloat , nextValue: () -> CGFloat) {
-            value = nextValue()
-        }
-    }
-    
-    public enum Spacing {
-        case constant(CGFloat)
-        case dynamic(minSpacing: CGFloat)
-        case dynamicIncludingBorders(minSpacing: CGFloat)
-        
-        internal var minSpacing: CGFloat {
-            switch self {
-            case .constant(let constantSpacing):
-                return constantSpacing
-            case .dynamic(minSpacing: let minSpacing), .dynamicIncludingBorders(minSpacing: let minSpacing):
-                return minSpacing
-            }
-        }
-    }
-
+public struct WrappingHStack<Data: RandomAccessCollection & RangeReplaceableCollection, Content: View>: View {
     let alignment: HorizontalAlignment
     let spacing: Spacing
     let lineSpacing: CGFloat
-    let contentManager: ContentManager
     let scrollToElement: Int
+    
+    let content: (Data.Element, Data) -> Content
+    let loadMoreData: () async -> Data
+    
     @State private var height: CGFloat = 0
+    @State var cache: ContentManager<Data>
     
     public var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 GeometryReader { geo in
-                    InternalWrappingHStack (
+                    InternalWrappingHStack(
                         width: geo.size.width,
                         alignment: alignment,
                         spacing: spacing,
                         lineSpacing: lineSpacing,
-                        contentManager: contentManager,
                         scrollToElement: scrollToElement,
-                        proxy: proxy
+                        proxy: proxy,
+                        content: content,
+                        loadMoreData: loadMoreData
                     )
                     .anchorPreference(
                         key: HeightPreferenceKey.self,
@@ -248,50 +281,36 @@ public struct WrappingHStack: View {
                 })
             }
         }
+        .environment(cache)
     }
 }
 
-// Convenience inits that allows 10 Elements (just like HStack).
-// Based on https://alejandromp.com/blog/implementing-a-equally-spaced-stack-in-swiftui-thanks-to-tupleview/
 public extension WrappingHStack {
-    @inline(__always) private static func getWidth<V: View>(of view: V) -> Double {
-        if view is NewLine {
-            return .infinity
-        }
-
-#if os(macOS)
-        let hostingController = NSHostingController(rootView: view)
-#else
-        let hostingController = UIHostingController(rootView: view)
-#endif
-        return hostingController.sizeThatFits(in: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)).width
-    }
-    
-    /// Instatiates a WrappingHStack
-    /// - Parameters:
-    ///   - data: The items to show
-    ///   - id: The `KeyPath` to use as id for the items
-    ///   - alignment: Controls the alignment of the items. This may get
-    ///    ignored when combined with `.dynamicIncludingBorders` or
-    ///    `.dynamic` spacing.
-    ///   - spacing: Use `.constant` for fixed spacing, `.dynamic` to have
-    ///    the items fill the width of the WrappingHSTack and
-    ///    `.dynamicIncludingBorders` to fill the full width with equal spacing
-    ///    between items and from the items to the border.
-    ///   - lineSpacing: The distance in points between the bottom of one line
-    ///    fragment and the top of the next
-    ///   - content: The content and behavior of the view.
-    init<Data: RandomAccessCollection, Content: View>(_ data: Data, id: KeyPath<Data.Element, Data.Element> = \.self, alignment: HorizontalAlignment = .leading, spacing: Spacing = .constant(8), lineSpacing: CGFloat = 0, scrollToElement: Int, @ViewBuilder content: @escaping (Data.Element) -> Content) {
+    init(
+        _ initialData: Data,
+        id: KeyPath<Data.Element, Data.Element> = \.self,
+        alignment: HorizontalAlignment = .leading,
+        spacing: Spacing = .constant(8),
+        lineSpacing: CGFloat = 0,
+        scrollToElement: Int,
+        @ViewBuilder content: @escaping (Data.Element, Data) -> Content,
+        loadMoreData: @escaping () async -> Data
+    ){
         self.spacing = spacing
         self.lineSpacing = lineSpacing
         self.alignment = alignment
-        self.contentManager = ContentManager(
-            items: data.map { ViewType(rawView: content($0[keyPath: id])) },
-            getWidths: {
-                data.map {
-                    Self.getWidth(of: content($0[keyPath: id]))
-                }
-            })
+        self._cache = State(initialValue: ContentManager(
+            data: initialData,
+            getWidths: { initialData.map { Self.getWidth(of: content($0[keyPath: id], initialData)) } })
+        )
         self.scrollToElement = scrollToElement
+        self.content = content
+        self.loadMoreData = loadMoreData
+    }
+}
+
+private extension RandomAccessCollection {
+    subscript(offset offset: Int) -> Element {
+        self[index(startIndex, offsetBy: offset)]
     }
 }
