@@ -10,7 +10,6 @@ import Observation
 import SwiftUI
 @preconcurrency import TTSFeature
 
-@MainActor
 @Observable
 class ReaderViewModel {
     private let synthesizer: TtSManager
@@ -56,15 +55,15 @@ class ReaderViewModel {
 
     @MainActor
     func setup() async {
-        self.setStatus(.preparing)
+        await self.setStatus(.preparing)
         do {
             self.text = try await textLoader.nextChunk()
             await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
             try await synthesizer.initialize()
         } catch {
-            self.setStatus(.idle)
+            await self.setStatus(.idle)
         }
-        self.setStatus(.idle)
+        await self.setStatus(.idle)
     }
     
     @MainActor
@@ -101,31 +100,37 @@ class ReaderViewModel {
     private func read() async {
         do {
             while !Task.isCancelled {
-                setStatus(.loading)
+                await self.setStatus(.loading)
                 let chunk: SynthesizedChunk = try await self.synthQueue.next()
-                setStatus(.reading)
+                await self.setStatus(.reading)
                 
-                let chunkStartIndex = self.getWordIndex()
+                let chunkStartIndex = await self.getWordIndex()
+                
+                let player = self.player
+                let audioData = chunk.audioData
+                let words = chunk.content.words
+                let baseIndex = chunkStartIndex
                 
                 await withDiscardingTaskGroup { group in
-                    group.addTask { [player] in
-                        await player.queue(audio: chunk.audioData)
-                    }
-                    
                     group.addTask {
-                        let stream = await self.player.wordStream(words: chunk.content.words, audio: chunk.audioData)
+                        await player.queue(audio: audioData)
+                    }
+                    group.addTask { [baseIndex] in
+                        let stream = await player.wordStream(words: words, audio: audioData)
                         for await wordIndex in stream {
-                            await self.setWordIndex(wordIndex + chunkStartIndex)
+                            await MainActor.run {
+                                self.currentWordIndex = wordIndex + baseIndex
+                            }
                         }
                     }
                 }
             }
         } catch is CancellationError  {
-            self.setStatus(.idle)
+            await self.setStatus(.idle)
         } catch is ChunkingError {
-            self.setStatus(.restartable)
+            await self.setStatus(.restartable)
         } catch {
-            self.setError(error.localizedDescription)
+            await self.setError(error.localizedDescription)
         }
     }
     
@@ -185,8 +190,8 @@ extension ReaderViewModel {
             previousTask?.cancel()
             self.currentTask = Task { [previousTask] in
                 _ = await previousTask?.value
-                await synthQueue.reset()
-                setWordIndex(start)
+                await self.synthQueue.reset()
+                await MainActor.run { self.currentWordIndex = start }
                 await self.chunker.rechunk(basedOn: self.text, and: start)
                 await read()
             }
@@ -196,3 +201,4 @@ extension ReaderViewModel {
         }
     }
 }
+
