@@ -6,8 +6,20 @@
 //
 
 import Foundation
+import SwiftUI
 
-public struct Step: Identifiable {
+public struct OnboardingStep: Identifiable {
     public let id = UUID()
-    let text: String
+    public let text: String
+    public let content: (Bool) -> AnyView
+    
+    public init<Content: View>(
+         _ text: String,
+         @ViewBuilder content: @escaping (Bool) -> Content
+     ) {
+         self.text = text
+         self.content = { flag in
+             AnyView(content(flag))
+         }
+     }
 }

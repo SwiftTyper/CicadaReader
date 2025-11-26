@@ -8,14 +8,14 @@
 import Foundation
 import SwiftUI
 
-public struct TextAppearanceView: View {
+public struct OnboardingView: View {
     @State private var currentStepIndex: Int? = nil
     
-    private let steps: [Step]
+    private let steps: [OnboardingStep]
     private let onComplete: () -> Void
     
     public init(
-        steps: [Step],
+        _ steps: [OnboardingStep],
         onComplete: @escaping () -> Void
     ) {
         self.steps = steps
@@ -24,20 +24,12 @@ public struct TextAppearanceView: View {
     
     public var body: some View {
         ZStack {
-            if let currentStepIndex {
-                let step = steps[currentStepIndex]
-                
-                Text(step.text)
-                    .id(step.id)
-                    .transition(
-                        LineByLineInBlurOutTransition()
-                    )
-                    .font(.system(size: 32, weight: .heavy))
+            if let index = currentStepIndex {
+                OnboardingStepView(step: steps[index])
             }
             
             VStack {
                 Spacer()
-                
                 Text("Tap to Continue")
                     .foregroundStyle(.secondary)
                     .font(.headline)
@@ -45,19 +37,20 @@ public struct TextAppearanceView: View {
             }
         }
         .contentShape(.rect)
-        .onTapGesture { self.next() }
+        .onTapGesture { next() }
         .padding(.horizontal, 42)
-        .onAppear { self.currentStepIndex = 0 }
+        .onAppear { currentStepIndex = 0 }
+        .transition(.blurReplace)
     }
     
-    func next() {
-        withAnimation(.smooth(duration: 5)) {
-            if currentStepIndex == steps.count - 1 {
-                
-            } else {
-                currentStepIndex = currentStepIndex.map {
-                    ($0 + 1) % steps.count
-                }
+    private func next() {
+        if let index = currentStepIndex, index == steps.count - 1 {
+            withAnimation(.smooth(duration: 1)){
+                onComplete()
+            }
+        } else {
+            withAnimation(.smooth(duration: 5)) {
+                currentStepIndex = (currentStepIndex ?? 0) + 1
             }
         }
     }
@@ -65,13 +58,22 @@ public struct TextAppearanceView: View {
 
 #Preview {
     NavigationStack {
-        TextAppearanceView(
-            steps: [
-                .init(text: "First step of the onboarding 👋"),
-                .init(text: "Second step of the onboarding ✨"),
-                .init(text: "Third step of the onboarding 🎉"),
+        OnboardingView(
+            [
+                .init("First step of the ondboarding 👋 will wierd animation happen here?",) { didAppear in
+                    Image(systemName: didAppear ? "lock.fill" : "lock")
+                        .bold()
+                },
+                .init("Second step of the onboarding ✨") { _ in
+                    Image(systemName: "capsule")
+                },
+                .init("Third step of the onboarding 🎉") { _ in
+                    Image(systemName: "person")
+                },
             ],
-            onComplete: {}
+            onComplete: {
+                
+            }
         )
     }
 }

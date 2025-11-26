@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3D22CA5C2EC2919B00168669 /* ReaderFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D22CA5B2EC2919B00168669 /* ReaderFeature */; };
 		3D22CA8C2EC5365600168669 /* ImportFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D22CA8B2EC5365600168669 /* ImportFeature */; };
+		3D5FA7AF2ED6345900A1F2AE /* OnboardingFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D5FA7AE2ED6345900A1F2AE /* OnboardingFeature */; };
 		3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */; };
 /* End PBXBuildFile section */
 
@@ -34,6 +35,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D5FA7AF2ED6345900A1F2AE /* OnboardingFeature in Frameworks */,
 				3D22CA8C2EC5365600168669 /* ImportFeature in Frameworks */,
 				3D22CA5C2EC2919B00168669 /* ReaderFeature in Frameworks */,
 				3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */,
@@ -91,6 +93,7 @@
 				3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */,
 				3D22CA5B2EC2919B00168669 /* ReaderFeature */,
 				3D22CA8B2EC5365600168669 /* ImportFeature */,
+				3D5FA7AE2ED6345900A1F2AE /* OnboardingFeature */,
 			);
 			productName = Readify;
 			productReference = 3DE754432EA58152008F4E9A /* Readify.app */;
@@ -379,6 +382,10 @@
 		3D22CA8B2EC5365600168669 /* ImportFeature */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ImportFeature;
+		};
+		3D5FA7AE2ED6345900A1F2AE /* OnboardingFeature */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OnboardingFeature;
 		};
 		3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */ = {
 			isa = XCSwiftPackageProductDependency;

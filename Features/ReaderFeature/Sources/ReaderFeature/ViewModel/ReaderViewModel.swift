@@ -10,6 +10,7 @@ import Observation
 import SwiftUI
 @preconcurrency import TTSFeature
 
+@MainActor
 @Observable
 class ReaderViewModel {
     private let synthesizer: TtSManager
