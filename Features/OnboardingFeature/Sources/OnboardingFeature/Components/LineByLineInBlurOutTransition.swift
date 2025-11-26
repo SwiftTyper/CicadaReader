@@ -14,9 +14,6 @@ struct LineByLineInBlurOutTransition: Transition {
         
         let animation: Animation = phase == .identity
         ? .linear(duration: duration)
-        /**
-         0.6 to make the out-animation a bit faster
-         */
         : .easeOut(duration: duration * 0.6)
         
         content

@@ -63,6 +63,7 @@ struct ComposerView: View {
                     }
                     .padding(.horizontal)
                 }
+                .scrollBounceBehavior(.basedOnSize)
                 .navigationTitle("Readify")
                 .toolbarTitleDisplayMode(.inlineLarge)
                 .navigationDestination(item: self.$content) { book in

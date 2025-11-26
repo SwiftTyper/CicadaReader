@@ -66,7 +66,7 @@ public struct OnboardingView<Home: View>: View {
     NavigationStack {
         OnboardingView(
             [
-                .init("First step of the ondboarding 👋 will wierd animation happen here?",) { didAppear in
+                .init("First step of the ondboarding") { didAppear in
                     Image(systemName: didAppear ? "lock.fill" : "lock")
                         .bold()
                 },
