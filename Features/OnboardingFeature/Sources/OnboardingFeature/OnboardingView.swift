@@ -8,45 +8,51 @@
 import Foundation
 import SwiftUI
 
-public struct OnboardingView: View {
+public struct OnboardingView<Home: View>: View {
     @State private var currentStepIndex: Int? = nil
+    @State private var didShowOnboarding: Bool
+    
+    @ViewBuilder var home: () -> Home
     
     private let steps: [OnboardingStep]
-    private let onComplete: () -> Void
+    private let didShowOnboardingKey: String = "didShowOnboardingKey"
     
     public init(
         _ steps: [OnboardingStep],
-        onComplete: @escaping () -> Void
+        @ViewBuilder home: @escaping () -> Home,
     ) {
         self.steps = steps
-        self.onComplete = onComplete
+        self.home = home
+        self.didShowOnboarding = UserDefaults.standard.bool(forKey: didShowOnboardingKey)
     }
     
     public var body: some View {
-        ZStack {
-            if let index = currentStepIndex {
-                OnboardingStepView(step: steps[index])
-            }
-            
-            VStack {
-                Spacer()
+        if !didShowOnboarding {
+            ZStack {
+                if let index = currentStepIndex {
+                    OnboardingStepView(step: steps[index])
+                }
+                
                 Text("Tap to Continue")
-                    .foregroundStyle(.secondary)
                     .font(.headline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
                     .padding()
             }
+            .contentShape(.rect)
+            .onTapGesture { next() }
+            .padding(.horizontal, 42)
+            .onAppear { currentStepIndex = 0 }
+            .transition(.blurReplace)
+        } else {
+            home()
         }
-        .contentShape(.rect)
-        .onTapGesture { next() }
-        .padding(.horizontal, 42)
-        .onAppear { currentStepIndex = 0 }
-        .transition(.blurReplace)
     }
     
     private func next() {
         if let index = currentStepIndex, index == steps.count - 1 {
             withAnimation(.smooth(duration: 1)){
-                onComplete()
+                didShowOnboarding = true
             }
         } else {
             withAnimation(.smooth(duration: 5)) {
@@ -70,10 +76,9 @@ public struct OnboardingView: View {
                 .init("Third step of the onboarding 🎉") { _ in
                     Image(systemName: "person")
                 },
-            ],
-            onComplete: {
-                
-            }
-        )
+            ]
+        ) {
+            Text("Home")
+        }
     }
 }

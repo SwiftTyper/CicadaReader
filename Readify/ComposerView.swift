@@ -13,11 +13,46 @@ import OnboardingFeature
 
 struct ComposerView: View {
     @State private var content: ReaderContent? = nil
-    @State private var didShowOnboarding: Bool = false
-    //    @AppStorage("didShowOnboarding") private var didShowOnboarding: Bool = false
+    
+    private var steps: [OnboardingStep] {
+        [
+            OnboardingStep(
+                "Listen to any text or file."
+            ) { didAppear in
+                Image(systemName: "waveform")
+                    .symbolEffect(.drawOn, isActive: !didAppear)
+                    .font(.extraLargeTitle)
+                    .foregroundStyle(.pink)
+                    .padding(8)
+            },
+            OnboardingStep(
+                "Natural-sounding AI voices."
+            ) { didAppear in
+                Image(systemName: "person.2.wave.2.fill")
+                    .symbolEffect(.variableColor, value: didAppear)
+                    .font(.extraLargeTitle)
+                    .padding(8)
+                
+            },
+            OnboardingStep(
+                "No Censorship"
+            ){ _ in
+            },
+            OnboardingStep(
+                "Everything stays private on your device."
+            ) { didAppear in
+                Image(systemName: didAppear ? "lock.fill" : "lock.open.fill")
+                    .frame(maxWidth: .infinity)
+                    .font(.extraLargeTitle)
+                    .foregroundStyle(.blue)
+                    .padding(8)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+        ]
+    }
 
     var body: some View {
-        if didShowOnboarding {
+        OnboardingView(steps) {
             NavigationStack {
                 ScrollView {
                     ImportView { content in
@@ -36,45 +71,6 @@ struct ComposerView: View {
                         synthesizer: .init()
                     )
                 }
-            }
-        } else {
-            OnboardingView(
-                [
-                    OnboardingStep(
-                        "Listen to any text or file."
-                    ) { didAppear in
-                        Image(systemName: "waveform")
-                            .symbolEffect(.drawOn, isActive: !didAppear)
-                            .font(.extraLargeTitle)
-                            .foregroundStyle(.pink)
-                            .padding(8)
-                    },
-                    OnboardingStep(
-                        "Natural-sounding AI voices."
-                    ) { didAppear in
-                        Image(systemName: "person.2.wave.2.fill")
-                            .symbolEffect(.variableColor, value: didAppear)
-                            .font(.extraLargeTitle)
-                            .padding(8)
-                        
-                    },
-                    OnboardingStep(
-                        "No Censorship"
-                    ){ _ in
-                    },
-                    OnboardingStep(
-                        "Everything stays private on your device."
-                    ) { didAppear in
-                        Image(systemName: didAppear ? "lock.fill" : "lock.open.fill")
-                            .frame(maxWidth: .infinity)
-                            .font(.extraLargeTitle)
-                            .foregroundStyle(.blue)
-                            .padding(8)
-                            .contentTransition(.symbolEffect(.replace))
-                    }
-                ]
-            ) {
-                self.didShowOnboarding = true
             }
         }
     }
