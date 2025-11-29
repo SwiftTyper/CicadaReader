@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import TextFeature
 
 @main
 struct ReadifyApp: App {
     var body: some Scene {
         WindowGroup {
-            ComposerView()
+            LazyTextViewDemo()
+//            ComposerView()
         }
     }
 }
