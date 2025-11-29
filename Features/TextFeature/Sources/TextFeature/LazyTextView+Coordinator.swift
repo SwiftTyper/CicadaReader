@@ -1,57 +1,15 @@
+//
+//  File.swift
+//  TextFeature
+//
+//  Created by Wit Owczarek on 29/11/2025.
+//
+
+import Foundation
 import UIKit
-import SwiftUI
 
-extension String {
-    var words: [String] {
-        let pattern = #"\S+"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
-        let range = NSRange(startIndex..., in: self)
-
-        return regex.matches(in: self, range: range).compactMap {
-            Range($0.range, in: self).map { String(self[$0]) }
-        }
-    }
-}
-
-struct LazyTextView: UIViewRepresentable {
-    var currentWordIndex: Int?
-    var initialText: String
-    var loadMore: (() async -> String)?
-
-    func makeUIView(context: Context) -> UITextView {
-        let tv = UITextView()
-        
-        tv.isEditable = false
-        tv.isScrollEnabled = true
-        tv.delegate = context.coordinator
-        
-        let style = NSMutableParagraphStyle()
-        style.lineSpacing = 6
-        style.paragraphSpacing = 10
-
-        let attributed = NSAttributedString(
-            string: initialText,
-            attributes: [
-                .paragraphStyle: style,
-                .kern: 1.4,
-                .font: UIFont.preferredFont(forTextStyle: .body),
-                .foregroundColor: UIColor.label
-            ]
-        )
-
-        tv.attributedText = attributed
-        
-        return tv
-    }
-
-    func updateUIView(_ uiView: UITextView, context: Context) {
-        guard let currentWordIndex else { return }
-        context.coordinator.selectWord(currentWordIndex, in: uiView)
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-    class Coordinator: NSObject, UITextViewDelegate {
+extension LazyTextView {
+    public class Coordinator: NSObject, UITextViewDelegate {
         var parent: LazyTextView
         var highlightLayer: CAShapeLayer?
 
@@ -77,7 +35,7 @@ struct LazyTextView: UIViewRepresentable {
             scrollWordRange(rect, in: textView)
         }
 
-        func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        public func scrollViewDidScroll(_ scrollView: UIScrollView) {
             guard let loadMore = parent.loadMore, let tv = scrollView as? UITextView else { return }
             let visibleBottom = scrollView.contentOffset.y + scrollView.bounds.height
             if visibleBottom > scrollView.contentSize.height - 200 {
@@ -114,36 +72,4 @@ extension LazyTextView.Coordinator {
         let maxOffsetY = max(0, textView.contentSize.height - textView.bounds.height)
         textView.setContentOffset(CGPoint(x: 0, y: min(offsetY, maxOffsetY)), animated: true)
     }
-}
-
-public struct LazyTextViewDemo: View {
-    @State private var scrollToWordIndex: Int? = nil
-    
-    public var body: some View {
-        NavigationStack {
-            LazyTextView(
-                currentWordIndex: scrollToWordIndex,
-                initialText: initial,
-                loadMore: fetchMoreTextExample
-            )
-            .toolbar {
-                Button("Next"){
-                    self.scrollToWordIndex = (scrollToWordIndex ?? 0) + 50
-                }
-            }
-        }
-    }
-
-    
-    let initial = Array(repeating: longTextExample, count: 30).reduce("", +)
-
-    func fetchMoreTextExample() async -> String {
-        return Array(repeating: longTextExample, count: 100).reduce("", +)
-    }
-}
-
-let longTextExample =  "/*Lorem*/ ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua..."
-
-#Preview {
-    LazyTextViewDemo()
 }

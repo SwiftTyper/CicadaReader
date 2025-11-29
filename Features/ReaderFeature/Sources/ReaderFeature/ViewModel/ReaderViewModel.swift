@@ -24,7 +24,8 @@ class ReaderViewModel {
     @MainActor var status: ReaderStatus = .idle
     @MainActor var currentWordIndex: Int = 0
     @MainActor var errorMessage: String? = nil
-    @MainActor var text: String = ""
+    
+    @ObservationIgnored private(set) var text: String = ""
 
     init(
         synthesizer: TtSManager,
@@ -48,10 +49,12 @@ class ReaderViewModel {
         )
     }
     
-    @MainActor
-    func onScrollChange() async {
-        guard let text = try? await textLoader.nextChunk() else { return }
-        self.text += text
+    func onScrollChange() async -> String {
+        guard let text = try? await textLoader.nextChunk() else { return "" }
+        await MainActor.run {
+            self.text += text
+        }
+        return text
     }
 
     @MainActor

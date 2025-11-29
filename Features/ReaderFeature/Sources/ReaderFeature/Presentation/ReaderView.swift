@@ -1,9 +1,11 @@
 import Foundation
 import SwiftUI
 import TTSFeature
+import TextFeature
 
 public struct ReaderView: View {
     @State private var vm: ReaderViewModel
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     
     private let content: ReaderContent
     
@@ -31,16 +33,18 @@ public struct ReaderView: View {
 
     public var body: some View {
         NavigationStack {
-            LazyScrollableTextView(
-                words: vm.text.words,
-                wordIndex: vm.currentWordIndex,
-                loadMoreCallback: {
-                    Task { await self.vm.onScrollChange() }
-                }
-           )
+            LazyTextView(
+                currentWordIndex: vm.currentWordIndex,
+                initialText: vm.text,
+                loadMore: { await self.vm.onScrollChange() }
+            )
+            .ignoresSafeArea(.all, edges: .bottom)
+            .padding(.horizontal, verticalSizeClass == .compact ? 0 : 16)
             .navigationTitle(content.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ReaderViewToolbar(vm: vm) }
+            .toolbarBackground(.regularMaterial)
+            .toolbarVisibility(.automatic, for: .navigationBar)
             .alert(
                 "Something went wrong!",
                 isPresented: alertIsPresented,

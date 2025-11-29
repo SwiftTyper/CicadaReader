@@ -12,8 +12,7 @@ import TextFeature
 struct ReadifyApp: App {
     var body: some Scene {
         WindowGroup {
-            LazyTextViewDemo()
-//            ComposerView()
+            ComposerView()
         }
     }
 }
