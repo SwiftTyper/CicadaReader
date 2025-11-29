@@ -205,4 +205,3 @@ extension ReaderViewModel {
         }
     }
 }
-

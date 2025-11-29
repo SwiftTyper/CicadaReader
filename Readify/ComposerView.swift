@@ -7,6 +7,7 @@
 
 import SwiftUI
 import TTSFeature
+import TextFeature
 import ReaderFeature
 import ImportFeature
 import OnboardingFeature
@@ -69,8 +70,14 @@ struct ComposerView: View {
                 .navigationDestination(item: self.$content) { book in
                     ReaderView(
                         content: book,
-                        synthesizer: .init()
-                    )
+                        synthesizer: .init(),
+                    ) { wordIndex, text, loadMore in
+                        LazyTextView(
+                            currentWordIndex: wordIndex,
+                            initialText: text,
+                            loadMore: { await loadMore() }
+                        )
+                    }
                 }
             }
         }

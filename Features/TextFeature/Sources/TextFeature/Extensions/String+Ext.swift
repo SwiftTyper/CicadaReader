@@ -15,14 +15,10 @@ extension String {
 
         return regex.matches(in: self, range: nsRange).compactMap { match in
             guard let range = Range(match.range, in: self) else { return nil }
-
-            let start = match.range.location
-            let end = match.range.location + match.range.length
-
             return IdentifiableString(
                 String(self[range]),
-                start: start,
-                end: end
+                start: match.range.location,
+                end: match.range.location + match.range.length
             )
         }
     }
