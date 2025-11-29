@@ -18,14 +18,11 @@ extension LazyTextView {
         func selectWord(_ wordIndex: Int, in textView: UITextView) {
             let words = textView.text.words
             guard wordIndex < words.count else { return }
-            
-            var loc = 0
-            for i in 0..<wordIndex { loc += words[i].count + 1 }
-            let range = NSRange(location: loc, length: words[wordIndex].count)
+            let target = words[wordIndex]
             
             guard
-                let startPosition = textView.position(from: textView.beginningOfDocument, offset: range.location),
-                let endPosition = textView.position(from: startPosition, offset: range.length),
+                let startPosition = textView.position(from: textView.beginningOfDocument, offset: target.start),
+                let endPosition = textView.position(from: textView.beginningOfDocument, offset: target.end),
                 let textRange = textView.textRange(from: startPosition, to: endPosition)
             else { return }
             
@@ -52,7 +49,7 @@ extension LazyTextView.Coordinator {
     private func highlightWord(_ rect: CGRect, in textView: UITextView) {
         highlightLayer?.removeFromSuperlayer()
         
-        let rect = rect.inset(by: .init(top: 0, left: -4, bottom: 0, right: -4))
+        let rect = rect.inset(by: .init(top: 0, left: -2, bottom: 0, right: -2))
         
         let layer = CAShapeLayer()
         layer.path = UIBezierPath(roundedRect: rect, cornerRadius: 6).cgPath

@@ -8,13 +8,22 @@
 import Foundation
 
 extension String {
-    var words: [String] {
+    var words: [IdentifiableString] {
         let pattern = #"\S+"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
-        let range = NSRange(startIndex..., in: self)
+        let nsRange = NSRange(startIndex..., in: self)
 
-        return regex.matches(in: self, range: range).compactMap {
-            Range($0.range, in: self).map { String(self[$0]) }
+        return regex.matches(in: self, range: nsRange).compactMap { match in
+            guard let range = Range(match.range, in: self) else { return nil }
+
+            let start = match.range.location
+            let end = match.range.location + match.range.length
+
+            return IdentifiableString(
+                String(self[range]),
+                start: start,
+                end: end
+            )
         }
     }
 }

@@ -2,7 +2,6 @@ import UIKit
 import SwiftUI
 
 fileprivate let longTextExample =  "/*Lorem*/ ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua..."
-
 fileprivate let initial = Array(repeating: longTextExample, count: 30).reduce("", +)
 
 struct TextViewDemo: View {
