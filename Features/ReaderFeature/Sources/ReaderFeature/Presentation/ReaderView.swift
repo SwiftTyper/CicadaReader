@@ -51,7 +51,8 @@ public struct ReaderView<Reader: View>: View {
                 )
                 .loader(
                     self.vm.status == .loading || self.vm.status == .preparing,
-                    isFullScreen: self.vm.status == .preparing
+                    isFullScreen: self.vm.status == .preparing,
+                    label: vm.status == .preparing ? "Preparing..." : "Loading..."
                 )
                 .task { await self.vm.setup() }
                 .onDisappear() { self.vm.cancel() }

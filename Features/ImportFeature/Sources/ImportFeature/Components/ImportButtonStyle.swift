@@ -26,8 +26,8 @@ struct ImportButtonStyle: ButtonStyle {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .frame(minHeight: 50)
-        .background(Material.thin)
-        .cornerRadius(12)
+        .background(.thinMaterial)
+        .cornerRadius(16)
     }
 }
 

@@ -51,6 +51,25 @@ struct ComposerView: View {
             }
         ]
     }
+    
+    private var infoMessage: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "info.circle")
+                .foregroundStyle(.blue)
+                .font(.body)
+
+            Text("Currently supports only English")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+        }
+        .padding()
+        .background(.blue.opacity(0.08))
+        .cornerRadius(14)
+        .padding(.horizontal)
+        .padding(.top, 12)
+    }
 
     var body: some View {
         OnboardingView(steps) {
@@ -63,6 +82,8 @@ struct ComposerView: View {
                         )
                     }
                     .padding(.horizontal)
+                    
+                    infoMessage
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 .navigationTitle("Readify")
