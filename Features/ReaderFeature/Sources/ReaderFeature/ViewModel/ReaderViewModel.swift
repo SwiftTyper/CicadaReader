@@ -76,7 +76,9 @@ class ReaderViewModel {
         do {
             self.text = try await textLoader.nextChunk()
             await self.chunker.rechunk(basedOn: self.text, and: self.currentWordIndex)
-            try await synthesizer.initialize()
+            if !synthesizer.isAvailable {
+                try await synthesizer.initialize()
+            }
         } catch {
             await self.setStatus(.idle)
         }
