@@ -103,7 +103,7 @@ actor LogConsole {
         let timestamp = dateFormatter.string(from: Date())
         let line = "[\(timestamp)] [\(label(for: level))] [FluidAudio.\(category)] \(message)\n"
         if let data = line.data(using: .utf8) {
-            FileHandle.standardError.write(data)
+//            FileHandle.standardError.write(data)
         }
     }
 

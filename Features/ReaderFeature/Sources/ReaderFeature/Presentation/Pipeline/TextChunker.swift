@@ -29,7 +29,11 @@ actor TextChunker {
         //slice that chunk from word index to the end of the chunk
         let chunkSlice = chunks[currentChunkIndex].slice(beforeWordIndex: wordIndex)
         
-        guard !chunkSlice.isEmpty && chunkIndex < chunks.count else {
+        print(chunkSlice)
+        
+        self.chunkIndex = currentChunkIndex
+        
+        if chunkSlice.isEmpty && chunkIndex == chunks.count {
             throw ChunkingError.runOutOfChunks
         }
         

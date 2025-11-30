@@ -8,7 +8,6 @@
 import Foundation
 import Observation
 import SwiftUI
-import AsyncAlgorithms
 @preconcurrency import TTSFeature
 
 struct Stack<T> {
@@ -22,7 +21,7 @@ struct Stack<T> {
 }
 
 
-class Pipeline: @unchecked Sendable {
+actor Pipeline {
     init(chunker: TextChunker) {
         self.cache = .init()
         self.chunker = chunker
@@ -64,15 +63,14 @@ class Pipeline: @unchecked Sendable {
         }
     }
     
-    func reset(from wordIndex: Int) {
-        for waiter in waiters {
-            waiter.resume(throwing: CancellationError())
+    func next(from wordIndex: Int) async throws -> SynthesizedChunk {
+        reset()
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            waiters.append(continuation)
+            
+            Task { await self.ensureBufferFilled() }
         }
-        waiters.removeAll()
-        
-        
-        
-        
     }
     
     /// Call when you want to reset buffer
@@ -89,19 +87,22 @@ class Pipeline: @unchecked Sendable {
     // MARK: - Core Production
 
     /// Ensures buffer stays filled. Can be called multiple times safely.
-    private func ensureBufferFilled() async {
+    private func ensureBufferFilled(wordIndex: Int? = nil) async {
         // Prevent concurrent production
         guard !isProducing else { return }
         isProducing = true
         
         defer { isProducing = false }
         
+        var wordIndex = wordIndex
+        
         do {
             // Produce until buffer is full OR all waiters are satisfied
             while buffer.count < targetBufferSize || !waiters.isEmpty {
                 try Task.checkCancellation()
                 
-                let chunk = try await produce()
+                let chunk = try await produce(wordIndex: wordIndex)
+                wordIndex = nil
                 
                 // First, satisfy any waiting consumers
                 if !waiters.isEmpty {
@@ -234,7 +235,13 @@ final class ReaderViewModel: @unchecked Sendable {
                     self.status = .loading
                 }
                 
-                let chunk: SynthesizedChunk = try await self.pipeline.next()
+                let chunk: SynthesizedChunk
+                if isFirst {
+                    chunk = try await self.pipeline.next(from: self.currentWordIndex)
+                    isFirst = false
+                } else {
+                    chunk = try await self.pipeline.next()
+                }
                 
                 await MainActor.run {
                     self.status = .reading
