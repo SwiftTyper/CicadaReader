@@ -10,21 +10,42 @@ import NaturalLanguage
 
 actor TextChunker {
     private var chunkIndex: Int = 0
-    private var chunks: [String]
+    private var chunks: [String] = []
     
-    init(text: String) {
-        self.chunks = text.makeChunks()
-    }
-    
-    func rechunk(basedOn fullText: String, and wordIndex: Int) {
-        self.chunkIndex = 0
-        let newText = fullText.slice(beforeWordIndex: wordIndex)
-        self.chunks = newText.makeChunks()
+    func get(from wordIndex: Int) throws -> String {
+        //identify chunk in which the word index is
+        var currentWordIndex: Int = 0
+        var currentChunkIndex: Int = 0
+        for index in 0..<chunks.count {
+            let wordCount = chunks[index].words.count
+            if currentWordIndex + wordCount < wordIndex {
+                currentWordIndex += wordCount
+            } else {
+                currentChunkIndex = index
+                break
+            }
+        }
+        
+        //slice that chunk from word index to the end of the chunk
+        let chunkSlice = chunks[currentChunkIndex].slice(beforeWordIndex: wordIndex)
+        
+        guard !chunkSlice.isEmpty && chunkIndex < chunks.count else {
+            throw ChunkingError.runOutOfChunks
+        }
+        
+        //set the chunk index to the next one
+        self.chunkIndex += 1
+        
+        //return it
+        return chunkSlice
     }
     
     func getNext() throws -> String {
         guard chunkIndex < chunks.count
-        else { throw ChunkingError.runOutOfChunks }
+        else {
+            //TODO: Ask loader if there are any chunks left - should never happen
+            throw ChunkingError.runOutOfChunks
+        }
 
         let string = chunks[chunkIndex]
         chunkIndex += 1
@@ -32,17 +53,29 @@ actor TextChunker {
     }
 }
 
+extension TextChunker {
+    func compute(newText: String) {
+        let safeText: String
+        if let lastChunk = self.chunks.popLast() {
+           safeText = "\(lastChunk)\(newText)"
+        } else {
+            safeText = newText
+        }
+        self.chunks.append(contentsOf: safeText.makeChunks())
+    }
+}
+
 private extension String {
     nonisolated func makeChunks() -> [String] {
-        let text = self
+        let text = self.replacingOccurrences(of: "\n", with: " ")
         let tokenizer = NLTokenizer(unit: .sentence)
         tokenizer.string = text
         
-        var sentences: [Substring] = []
+        var sentences: [String] = []
         
         tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
-            let sentence = text[range]
-            if !sentence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let sentence = text[range].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !sentence.isEmpty {
                 sentences.append(sentence)
             }
             return true

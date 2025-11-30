@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3D22CA5C2EC2919B00168669 /* ReaderFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D22CA5B2EC2919B00168669 /* ReaderFeature */; };
 		3D22CA8C2EC5365600168669 /* ImportFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D22CA8B2EC5365600168669 /* ImportFeature */; };
+		3D4276762EDB81130054F664 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 3D4276752EDB81130054F664 /* AsyncAlgorithms */; };
 		3D5FA7AF2ED6345900A1F2AE /* OnboardingFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D5FA7AE2ED6345900A1F2AE /* OnboardingFeature */; };
 		3D7550C22EDA570900A436FE /* TextFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3D7550C12EDA570900A436FE /* TextFeature */; };
 		3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 3DC0B6EC2EAE4F0B0007C299 /* TTSFeature */; };
@@ -41,6 +42,7 @@
 				3D22CA5C2EC2919B00168669 /* ReaderFeature in Frameworks */,
 				3DC0B6ED2EAE4F0B0007C299 /* TTSFeature in Frameworks */,
 				3D7550C22EDA570900A436FE /* TextFeature in Frameworks */,
+				3D4276762EDB81130054F664 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,6 +99,7 @@
 				3D22CA8B2EC5365600168669 /* ImportFeature */,
 				3D5FA7AE2ED6345900A1F2AE /* OnboardingFeature */,
 				3D7550C12EDA570900A436FE /* TextFeature */,
+				3D4276752EDB81130054F664 /* AsyncAlgorithms */,
 			);
 			productName = Readify;
 			productReference = 3DE754432EA58152008F4E9A /* Readify.app */;
@@ -127,6 +130,7 @@
 			mainGroup = 3DE7543A2EA58152008F4E9A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				3D4276742EDB81130054F664 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3DE754442EA58152008F4E9A /* Products */;
@@ -377,6 +381,17 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		3D4276742EDB81130054F664 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		3D22CA5B2EC2919B00168669 /* ReaderFeature */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -385,6 +400,11 @@
 		3D22CA8B2EC5365600168669 /* ImportFeature */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ImportFeature;
+		};
+		3D4276752EDB81130054F664 /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D4276742EDB81130054F664 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
 		};
 		3D5FA7AE2ED6345900A1F2AE /* OnboardingFeature */ = {
 			isa = XCSwiftPackageProductDependency;

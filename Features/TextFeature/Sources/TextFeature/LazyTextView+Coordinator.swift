@@ -12,11 +12,14 @@ extension LazyTextView {
     public class Coordinator: NSObject, UITextViewDelegate {
         var parent: LazyTextView
         var highlightLayer: CAShapeLayer?
+        var words: [IdentifiableString] = []
 
-        init(_ parent: LazyTextView) { self.parent = parent }
+        init(_ parent: LazyTextView) {
+            self.parent = parent
+            self.words = parent.initialText.words
+        }
 
         func selectWord(_ wordIndex: Int, in textView: UITextView) {
-            let words = textView.text.words
             guard wordIndex < words.count else { return }
             let target = words[wordIndex]
             
@@ -38,7 +41,10 @@ extension LazyTextView {
             if visibleBottom > scrollView.contentSize.height - 200 {
                 Task {
                     let moreText = await loadMore()
-                    await MainActor.run { tv.text.append(moreText) }
+                    words.append(contentsOf: moreText.words)
+                    await MainActor.run {
+                        tv.text.append(moreText)
+                    }
                 }
             }
         }
