@@ -13,8 +13,6 @@ import OSLog
 /// let audioData = try await manager.synthesize(text: "Hello, world!")
 /// ```
 public final class TtSManager {
-
-    private let logger = AppLogger(category: "TtSManager")
     private let modelCache: KokoroModelCache
     private let lexiconAssets: LexiconAssetManager
 
@@ -64,7 +62,7 @@ public final class TtSManager {
         try await KokoroSynthesizer.loadSimplePhonemeDictionary()
         try await modelCache.loadModelsIfNeeded(variants: models.availableVariants)
         isInitialized = true
-        logger.notice("TtSManager initialized with provided models")
+        print("TtSManager initialized with provided models")
     }
 
     public func initialize(preloadVoices: Set<String>? = nil) async throws {
@@ -147,7 +145,7 @@ public final class TtSManager {
         )
 
         try audioData.write(to: outputURL)
-        logger.notice("Saved synthesized audio to: \(outputURL.lastPathComponent)")
+        print("Saved synthesized audio to: \(outputURL.lastPathComponent)")
     }
 
     public func setDefaultVoice(_ voice: String, speakerId: Int = 0) async throws {

@@ -75,10 +75,10 @@ extension KokoroSynthesizer {
                 wordToPhonemes = filteredLower
                 caseSensitiveWordToPhonemes = filteredCase
                 isLoaded = true
-                KokoroSynthesizer.logger.info("Loaded lexicon cache: \(filteredLower.count) entries")
+                print("Loaded lexicon cache: \(filteredLower.count) entries")
                 return true
             } catch {
-                KokoroSynthesizer.logger.warning("Failed to load lexicon cache: \(error.localizedDescription)")
+                print("Failed to load lexicon cache: \(error.localizedDescription)")
                 wordToPhonemes = [:]
                 caseSensitiveWordToPhonemes = [:]
                 isLoaded = false
@@ -94,9 +94,9 @@ extension KokoroSynthesizer {
                 encoder.outputFormatting = [.sortedKeys]
                 let data = try encoder.encode(payload)
                 try data.write(to: url, options: [.atomic])
-                KokoroSynthesizer.logger.info("Wrote lexicon cache to \(url.path)")
+                print("Wrote lexicon cache to \(url.path)")
             } catch {
-                KokoroSynthesizer.logger.warning("Failed to persist lexicon cache: \(error.localizedDescription)")
+                print("Failed to persist lexicon cache: \(error.localizedDescription)")
             }
         }
     }

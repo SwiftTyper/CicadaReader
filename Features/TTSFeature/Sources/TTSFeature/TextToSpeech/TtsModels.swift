@@ -5,8 +5,6 @@ import OSLog
 public struct TtsModels {
     private let kokoroModels: [ModelNames.TTS.Variant: MLModel]
 
-    private static let logger = AppLogger(category: "TtsModels")
-
     public init(models: [ModelNames.TTS.Variant: MLModel]) {
         self.kokoroModels = models
     }
@@ -74,7 +72,7 @@ public struct TtsModels {
         for variant in targetVariants {
             if let duration = warmUpDurations[variant] {
                 let formatted = String(format: "%.2f", duration)
-                logger.info("Warm-up completed for \(variantDescription(variant)) in \(formatted)s")
+                print("Warm-up completed for \(variantDescription(variant)) in \(formatted)s")
             }
         }
 
@@ -166,7 +164,7 @@ public struct TtsModels {
             let options: MLPredictionOptions = optimizedPredictionOptions()
             _ = try await model.compatPrediction(from: features, options: options)
         } catch {
-            logger.warning(
+            print(
                 "Warm-up prediction failed for variant \(variantDescription(variant)): \(error.localizedDescription)"
             )
         }

@@ -3,8 +3,6 @@ import Foundation
 import OSLog
 
 public actor KokoroModelCache {
-
-    private let logger = AppLogger(subsystem: "com.fluidaudio.tts", category: "KokoroModelCache")
     private var kokoroModels: [ModelNames.TTS.Variant: MLModel] = [:]
     private var tokenLengthCache: [ModelNames.TTS.Variant: Int] = [:]
     private var downloadedModels: [ModelNames.TTS.Variant: MLModel] = [:]
@@ -38,7 +36,7 @@ public actor KokoroModelCache {
             }
             kokoroModels[variant] = model
             tokenLengthCache[variant] = KokoroSynthesizer.inferTokenLength(from: model)
-            logger.info("Loaded Kokoro \(variantDescription(variant)) model from cache")
+            print("Loaded Kokoro \(variantDescription(variant)) model from cache")
         }
 
         if referenceDimension == nil,
@@ -48,7 +46,7 @@ public actor KokoroModelCache {
         }
 
         let loadedVariants = kokoroModels.keys.map { variantDescription($0) }.sorted().joined(separator: ", ")
-        logger.info("Kokoro models ready: [\(loadedVariants)]")
+        print("Kokoro models ready: [\(loadedVariants)]")
     }
 
     public func model(for variant: ModelNames.TTS.Variant) async throws -> MLModel {

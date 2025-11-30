@@ -28,8 +28,6 @@ final class EspeakG2P {
     }
 
     static let shared = EspeakG2P()
-    private let logger = AppLogger(subsystem: "com.fluidaudio.tts", category: "EspeakG2P")
-
     private let queue = DispatchQueue(label: "com.fluidaudio.tts.espeak.g2p")
     private var initialized = false
     private var currentVoice: String = ""
@@ -52,7 +50,7 @@ final class EspeakG2P {
                 let modeIPA = Int32(espeakPHONEMES_IPA)
                 let textmode = Int32(espeakCHARS_AUTO)
                 guard let outPtr = espeak_TextToPhonemes(&raw, textmode, modeIPA) else {
-                    logger.warning("espeak_TextToPhonemes returned nil for word: \(word)")
+                    print("espeak_TextToPhonemes returned nil for word: \(word)")
                     return nil
                 }
                 let phonemeString = String(cString: outPtr)
@@ -71,7 +69,7 @@ final class EspeakG2P {
             if espeakVoice != currentVoice {
                 let result = espeakVoice.withCString { espeak_SetVoiceByName($0) }
                 guard result == EE_OK else {
-                    logger.error("Failed to set voice to \(espeakVoice), error code: \(result)")
+                    print("Failed to set voice to \(espeakVoice), error code: \(result)")
                     throw EspeakG2PError.voiceSelectionFailed(voice: espeakVoice, error: result)
                 }
                 currentVoice = espeakVoice
@@ -80,16 +78,16 @@ final class EspeakG2P {
         }
 
         let dataDir = try Self.ensureResourcesAvailable()
-        logger.info("Using eSpeak NG data from framework: \(dataDir.path)")
+        print("Using eSpeak NG data from framework: \(dataDir.path)")
         let rc: Int32 = dataDir.path.withCString { espeak_Initialize(AUDIO_OUTPUT_SYNCHRONOUS, 0, $0, 0) }
 
         guard rc >= 0 else {
-            logger.error("eSpeak NG initialization failed (rc=\(rc))")
+            print("eSpeak NG initialization failed (rc=\(rc))")
             throw EspeakG2PError.initializationFailed(code: rc)
         }
         let voiceResult = espeakVoice.withCString { espeak_SetVoiceByName($0) }
         guard voiceResult == EE_OK else {
-            logger.error("Failed to set initial voice to \(espeakVoice), error code: \(voiceResult)")
+            print("Failed to set initial voice to \(espeakVoice), error code: \(voiceResult)")
             espeak_Terminate()
             throw EspeakG2PError.voiceSelectionFailed(voice: espeakVoice, error: voiceResult)
         }
@@ -97,23 +95,21 @@ final class EspeakG2P {
         initialized = true
     }
 
-    private static let staticLogger = AppLogger(subsystem: "com.fluidaudio.tts", category: "EspeakG2P")
-
     @discardableResult
     static func ensureResourcesAvailable() throws -> URL {
         let url = try frameworkBundledDataPath()
-        staticLogger.info("eSpeak NG data directory: \(url.path)")
+        print("eSpeak NG data directory: \(url.path)")
         return url
     }
 
     private static func frameworkBundledDataPath() throws -> URL {
         guard let espeakBundle = Bundle(identifier: "com.kokoro.espeakng") else {
-            staticLogger.error("ESpeakNG.framework not found; ensure it is embedded with the application.")
+            print("ESpeakNG.framework not found; ensure it is embedded with the application.")
             throw EspeakG2PError.frameworkBundleMissing
         }
 
         guard let bundleURL = espeakBundle.url(forResource: "espeak-ng-data", withExtension: "bundle") else {
-            staticLogger.error(
+            print(
                 "espeak-ng-data.bundle missing from ESpeakNG.framework resources at \(espeakBundle.bundlePath)")
             throw EspeakG2PError.dataBundleMissing
         }
@@ -122,7 +118,7 @@ final class EspeakG2P {
         let voicesPath = dataDir.appendingPathComponent("voices")
 
         guard FileManager.default.fileExists(atPath: voicesPath.path) else {
-            staticLogger.error("espeak-ng-data.bundle found but voices directory missing at \(voicesPath.path)")
+            print("espeak-ng-data.bundle found but voices directory missing at \(voicesPath.path)")
             throw EspeakG2PError.voicesDirectoryMissing
         }
 

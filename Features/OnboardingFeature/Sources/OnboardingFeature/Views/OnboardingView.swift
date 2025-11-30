@@ -54,6 +54,7 @@ public struct OnboardingView<Home: View>: View {
             withAnimation(.smooth(duration: 1)){
                 didShowOnboarding = true
             }
+            UserDefaults.standard.set(true, forKey: didShowOnboardingKey)
         } else {
             withAnimation(.smooth(duration: 5)) {
                 currentStepIndex = (currentStepIndex ?? 0) + 1

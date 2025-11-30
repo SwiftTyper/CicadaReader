@@ -10,7 +10,6 @@ import OSLog
 /// - Avoids any manual resampling; only raw sample extraction occurs after conversion.
 /// - Creates a new converter for each operation (stateless).
 final public class AudioConverter {
-    private let logger = AppLogger(category: "AudioConverter")
     private let targetFormat: AVAudioFormat
 
     /// Public initializer so external modules (e.g. CLI) can construct the converter
@@ -124,7 +123,7 @@ final public class AudioConverter {
         }
 
         let outputSampleCount = aggregated.count
-        logger.debug(
+        print(
             "Audio conversion: \(inputSampleCount) samples → \(outputSampleCount) samples, ratio: \(Double(outputSampleCount)/Double(inputSampleCount))"
         )
 
@@ -189,7 +188,7 @@ final public class AudioConverter {
             }
         }
 
-        logger.debug(
+        print(
             "Manual resampling: \(channelCount) channels → mono, \(inputSampleRate)Hz → \(targetSampleRate)Hz"
         )
 

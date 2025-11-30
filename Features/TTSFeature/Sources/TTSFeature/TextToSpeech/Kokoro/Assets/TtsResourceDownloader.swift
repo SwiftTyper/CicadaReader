@@ -2,8 +2,6 @@ import Foundation
 
 /// Kokoro TTS resource downloader (lexicons, voice embeddings)
 public enum TtsResourceDownloader {
-
-    private static let logger = AppLogger(category: "TtsResourceDownloader")
     private static let kokoroBaseURL = "https://huggingface.co/\(Repo.kokoro.remotePath)/resolve/main"
 
     /// Download a voice embedding JSON file from HuggingFace
@@ -18,9 +16,8 @@ public enum TtsResourceDownloader {
             let data = try await AssetDownloader.fetchData(
                 from: url,
                 description: "\(voice) voice embedding JSON",
-                logger: logger
             )
-            logger.info("Downloaded voice embedding JSON for \(voice)")
+            print("Downloaded voice embedding JSON for \(voice)")
             return data
         } catch {
             throw TTSError.modelNotFound("Voice embedding JSON unavailable for \(voice): \(error.localizedDescription)")
@@ -46,7 +43,7 @@ public enum TtsResourceDownloader {
         // Try to download
         let data = try await downloadVoiceEmbedding(voice: voice)
         try data.write(to: jsonURL, options: [.atomic])
-        logger.info("Voice embedding cached: \(voice)")
+        print("Voice embedding cached: \(voice)")
     }
 
     /// Ensure a Kokoro lexicon file exists locally (e.g. `us_gold.json`).
@@ -73,7 +70,6 @@ public enum TtsResourceDownloader {
             )
             return try await AssetDownloader.ensure(
                 descriptor,
-                logger: logger
             )
         } catch {
             throw TTSError.modelNotFound("Failed to download \(filename): \(error.localizedDescription)")

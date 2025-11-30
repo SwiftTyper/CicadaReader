@@ -60,7 +60,6 @@ public enum AssetDownloader {
     public static func ensure(
         _ descriptor: Descriptor,
         session: URLSession = DownloadUtils.sharedSession,
-        logger: AppLogger = AppLogger(category: "AssetDownloader")
     ) async throws -> URL {
         if descriptor.skipIfExists,
             FileManager.default.fileExists(atPath: descriptor.destinationURL.path)
@@ -73,7 +72,7 @@ public enum AssetDownloader {
             withIntermediateDirectories: true
         )
 
-        logger.info("Downloading \(descriptor.description)…")
+        print("Downloading \(descriptor.description)…")
         switch descriptor.transferMode {
         case .data(let writer):
             let (data, response) = try await session.data(from: descriptor.remoteURL)
@@ -90,7 +89,7 @@ public enum AssetDownloader {
             }
             try handler(tempURL, descriptor.destinationURL)
         }
-        logger.info("Cached \(descriptor.description) at \(descriptor.destinationURL.path)")
+        print("Cached \(descriptor.description) at \(descriptor.destinationURL.path)")
         return descriptor.destinationURL
     }
 
@@ -98,9 +97,8 @@ public enum AssetDownloader {
         from remoteURL: URL,
         description: String,
         session: URLSession = DownloadUtils.sharedSession,
-        logger: AppLogger = AppLogger(category: "AssetDownloader")
     ) async throws -> Data {
-        logger.debug("Fetching \(description) from \(remoteURL.absoluteString)")
+        print("Fetching \(description) from \(remoteURL.absoluteString)")
         let (data, response) = try await session.data(from: remoteURL)
         let status = (response as? HTTPURLResponse)?.statusCode ?? -1
         guard (200..<300).contains(status) else {

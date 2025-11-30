@@ -4,9 +4,6 @@ import OSLog
 
 /// HuggingFace model downloader based on swift-transformers implementation
 public class DownloadUtils {
-
-    private static let logger = AppLogger(category: "DownloadUtils")
-
     public static let sharedSession: URLSession = {
         let configuration = URLSessionConfiguration.default
 
@@ -104,7 +101,6 @@ public class DownloadUtils {
         variant: String? = nil
     ) async throws -> [String: MLModel] {
         // Ensure host environment is logged for debugging (once per process)
-        await SystemInfo.logOnce(using: logger)
         do {
             // 1st attempt: normal load
             return try await loadModelsOnce(
@@ -112,8 +108,8 @@ public class DownloadUtils {
                 directory: directory, computeUnits: computeUnits, variant: variant)
         } catch {
             // 1st attempt failed → wipe cache to signal redownload
-            logger.warning("First load failed: \(error.localizedDescription)")
-            logger.info("Deleting cache and re-downloading…")
+            print("First load failed: \(error.localizedDescription)")
+            print("Deleting cache and re-downloading…")
             let repoPath = directory.appendingPathComponent(repo.folderName)
             try? FileManager.default.removeItem(at: repoPath)
 
@@ -139,17 +135,16 @@ public class DownloadUtils {
         variant: String? = nil
     ) async throws -> [String: MLModel] {
         // Ensure host environment is logged for debugging (once per process)
-        await SystemInfo.logOnce(using: logger)
         // Ensure base directory exists
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         // Download repo if needed
         let repoPath = directory.appendingPathComponent(repo.folderName)
         if !FileManager.default.fileExists(atPath: repoPath.path) {
-            logger.info("Models not found in cache at \(repoPath.path)")
+            print("Models not found in cache at \(repoPath.path)")
             try await downloadRepo(repo, to: directory, variant: variant)
         } else {
-            logger.info("Found \(repo.folderName) locally, no download needed")
+            print("Found \(repo.folderName) locally, no download needed")
         }
 
         // Configure CoreML
@@ -188,7 +183,7 @@ public class DownloadUtils {
 
                 let coremlDataPath = modelPath.appendingPathComponent("coremldata.bin")
                 guard FileManager.default.fileExists(atPath: coremlDataPath.path) else {
-                    logger.error("Missing coremldata.bin in \(name)")
+                    print("Missing coremldata.bin in \(name)")
                     throw CocoaError(
                         .fileReadCorruptFile,
                         userInfo: [
@@ -206,14 +201,14 @@ public class DownloadUtils {
 
                 let ms = elapsed * 1000
                 let formatted = String(format: "%.2f", ms)
-                logger.info("Compiled model \(name) in \(formatted) ms :: \(SystemInfo.summary())")
+                print("Compiled model \(name) in \(formatted) ms")
             } catch {
-                logger.error("Failed to load model \(name): \(error)")
+                print("Failed to load model \(name): \(error)")
 
                 if let contents = try? FileManager.default.contentsOfDirectory(
                     atPath: modelPath.deletingLastPathComponent().path)
                 {
-                    logger.error("Model directory contents: \(contents)")
+                    print("Model directory contents: \(contents)")
                 }
 
                 throw error
@@ -227,12 +222,6 @@ public class DownloadUtils {
     /// Uses centralized ModelNames where available to avoid cross‑type coupling
     private static func getRequiredModelNames(for repo: Repo) -> Set<String> {
         switch repo {
-        case .vad:
-            return ModelNames.VAD.requiredModels
-        case .parakeet, .parakeetV2:
-            return ModelNames.ASR.requiredModels
-        case .diarizer:
-            return ModelNames.Diarizer.requiredModels
         case .kokoro:
             return ModelNames.TTS.requiredModels
         }
@@ -240,7 +229,7 @@ public class DownloadUtils {
 
     /// Download a HuggingFace repository
     private static func downloadRepo(_ repo: Repo, to directory: URL, variant: String? = nil) async throws {
-        logger.info("Downloading \(repo.folderName) from HuggingFace...")
+        print("Downloading \(repo.folderName) from HuggingFace...")
 
         let repoPath = directory.appendingPathComponent(repo.folderName)
         try FileManager.default.createDirectory(at: repoPath, withIntermediateDirectories: true)
@@ -259,7 +248,7 @@ public class DownloadUtils {
                     requiredModels.contains(file.path) || requiredModels.contains { $0.hasSuffix("/" + file.path) }
 
                 if isRequired {
-                    logger.info("Downloading required model: \(file.path)")
+                    print("Downloading required model: \(file.path)")
 
                     // Find if this should go in a subfolder
                     if let fullPath = requiredModels.first(where: { $0.hasSuffix("/" + file.path) }),
@@ -277,11 +266,11 @@ public class DownloadUtils {
                         try await downloadModelDirectory(repo: repo, dirPath: file.path, to: repoPath)
                     }
                 } else {
-                    logger.info("Skipping unrequired model: \(file.path)")
+                    print("Skipping unrequired model: \(file.path)")
                 }
 
             case "file" where isEssentialFile(file.path):
-                logger.info("Downloading \(file.path)")
+                    print("Downloading \(file.path)")
                 try await downloadFile(
                     from: repo,
                     path: file.path,
@@ -295,7 +284,7 @@ public class DownloadUtils {
             }
         }
 
-        logger.info("Downloaded all required models for \(repo.folderName)")
+        print("Downloaded all required models for \(repo.folderName)")
     }
 
     /// Check if a file is essential for model operation
@@ -341,9 +330,9 @@ public class DownloadUtils {
 
                 // Only log large files (>10MB) to reduce noise
                 if expectedSize > 10_000_000 {
-                    logger.info("Downloading \(item.path) (\(formatBytes(expectedSize)))")
+                    print("Downloading \(item.path) (\(formatBytes(expectedSize)))")
                 } else {
-                    logger.debug("Downloading \(item.path) (\(formatBytes(expectedSize)))")
+                    print("Downloading \(item.path) (\(formatBytes(expectedSize)))")
                 }
 
                 try await downloadFile(
@@ -373,7 +362,7 @@ public class DownloadUtils {
             let percentage = Int(progress * 100)
             if percentage >= lastReportedPercentage + 10 {
                 lastReportedPercentage = percentage
-                logger.info("Progress: \(percentage)% of \(fileName)")
+                print("Progress: \(percentage)% of \(fileName)")
             }
         }
     }
@@ -395,7 +384,7 @@ public class DownloadUtils {
             let fileSize = attrs[.size] as? Int64,
             fileSize == expectedSize
         {
-            logger.info("File already downloaded: \(path)")
+            print("File already downloaded: \(path)")
             progressHandler?(1.0)
             return
         }
@@ -409,7 +398,7 @@ public class DownloadUtils {
             let fileSize = attrs[.size] as? Int64
         {
             startByte = fileSize
-            logger.info("⏸️ Resuming download from \(formatBytes(Int(startByte)))")
+            print("⏸️ Resuming download from \(formatBytes(Int(startByte)))")
         }
 
         // Download URL
@@ -432,7 +421,7 @@ public class DownloadUtils {
                 let fileSize = attrs[.size] as? Int64
             {
                 if fileSize != expectedSize {
-                    logger.warning(
+                    print(
                         "⚠️ Downloaded file size mismatch for \(path): got \(fileSize), expected \(expectedSize)"
                     )
                 }
@@ -445,14 +434,14 @@ public class DownloadUtils {
             } catch {
                 // In CI, file operations might fail due to sandbox restrictions
                 // Try copying instead of moving as a fallback
-                logger.warning("Move failed for \(path), attempting copy: \(error)")
+                print("Move failed for \(path), attempting copy: \(error)")
                 try FileManager.default.copyItem(at: tempURL, to: destination)
                 try? FileManager.default.removeItem(at: tempURL)
             }
-            logger.info("Downloaded \(path)")
+            print("Downloaded \(path)")
 
         } catch {
-            logger.error("Download failed: \(error)")
+            print("Download failed: \(error)")
             throw error
         }
     }
@@ -490,7 +479,7 @@ public class DownloadUtils {
         } catch {
             // In CI, URLSession might download to a different temp location
             // Try copying instead of moving as a fallback
-            logger.warning("Move failed, attempting copy: \(error)")
+            print("Move failed, attempting copy: \(error)")
             try FileManager.default.copyItem(at: tempFile, to: destination)
             try? FileManager.default.removeItem(at: tempFile)
         }

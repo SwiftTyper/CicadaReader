@@ -2,8 +2,6 @@ import Foundation
 import OSLog
 
 enum PhonemeMapper {
-    private static let logger = AppLogger(subsystem: "com.fluidaudio.tts", category: "PhonemeMapper")
-
     /// Map a sequence of IPA tokens to Kokoro vocabulary tokens, filtering to `allowed`.
     /// Unknown symbols are approximated when possible; otherwise dropped.
     static func mapIPA(_ ipaTokens: [String], allowed: Set<String>) -> [String] {

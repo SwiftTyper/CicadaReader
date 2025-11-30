@@ -18,7 +18,6 @@ struct TextChunk: Sendable {
 /// punctuation-aware merging, and phoneme lookup ensure each chunk stays within the model’s
 /// token capacity before synthesis.
 enum KokoroChunker {
-    private static let logger = AppLogger(subsystem: "com.fluidaudio.tts", category: "KokoroChunker")
     private static let decimalDigits = CharacterSet.decimalDigits
     private static let apostropheCharacters: Set<Character> = ["'", "’", "ʼ", "‛", "‵", "′"]
 
@@ -56,7 +55,7 @@ enum KokoroChunker {
             return trimmed.isEmpty ? nil : trimmed
         }
         guard !refinedSentences.isEmpty else {
-            logger.info("Kokoro chunker produced no segments after refinement")
+            print("Kokoro chunker produced no segments after refinement")
             return []
         }
 
@@ -95,7 +94,7 @@ enum KokoroChunker {
                     segmentsByPunctuations.append(contentsOf: reassembled)
                     continue
                 }
-                logger.warning(
+                print(
                     "segmentsByPeriodsSplit[\(periodIndex)]: no punctuation-based split within capacity; deferring to chunk builder"
                 )
             }
@@ -136,7 +135,7 @@ enum KokoroChunker {
         if overrideIndex < sortedOverrides.count {
             let remaining = sortedOverrides[overrideIndex...]
             let sample = remaining.prefix(5).map { $0.word }
-            logger.warning("Unused phonetic overrides for words: \(sample.joined(separator: ", "))")
+            print("Unused phonetic overrides for words: \(sample.joined(separator: ", "))")
         }
 
         return chunks
@@ -253,7 +252,7 @@ enum KokoroChunker {
         flushBuffer()
 
         if didMerge {
-            logger.debug("Merged short sentences into \(merged.count) segments (threshold=\(threshold) tokens)")
+            print("Merged short sentences into \(merged.count) segments (threshold=\(threshold) tokens)")
         }
 
         return merged
@@ -322,7 +321,7 @@ enum KokoroChunker {
                     while overrideIndex < overrides.count {
                         let candidate = overrides[overrideIndex]
                         if candidate.wordIndex < wordIndex {
-                            logger.warning(
+                            print(
                                 "Skipping stale phonetic override for word: \(candidate.word) (index \(candidate.wordIndex))"
                             )
                             overrideIndex += 1
@@ -331,7 +330,7 @@ enum KokoroChunker {
                         if candidate.wordIndex == wordIndex {
                             let overrideTokens = resolveOverride(candidate, allowed: allowed)
                             if overrideTokens.isEmpty {
-                                logger.warning(
+                                print(
                                     "Phonetic override for word index \(wordIndex) (word: \(candidate.word)) produced no valid tokens; falling back to lexicon"
                                 )
                             } else {
@@ -401,7 +400,7 @@ enum KokoroChunker {
         flushChunk()
 
         if !missing.isEmpty {
-            logger.warning("Missing phoneme entries for: \(missing.sorted().joined(separator: ", "))")
+            print("Missing phoneme entries for: \(missing.sorted().joined(separator: ", "))")
         }
 
         return chunks

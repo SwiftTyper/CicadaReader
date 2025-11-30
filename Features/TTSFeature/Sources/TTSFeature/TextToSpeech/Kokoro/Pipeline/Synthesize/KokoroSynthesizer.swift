@@ -9,8 +9,6 @@ import FoundationNetworking
 
 /// Supports both 5s and 15s variants with US English phoneme lexicons
 public struct KokoroSynthesizer {
-    static let logger = AppLogger(category: "KokoroSynthesizer")
-
     static let lexiconCache = LexiconCache()
     static let multiArrayPool = MultiArrayPool()
 
@@ -116,9 +114,9 @@ public struct KokoroSynthesizer {
         }
 
         if entries.count == 1 {
-            Self.logger.info("Text fits in single chunk")
+            print("Text fits in single chunk")
         } else {
-            Self.logger.info("Text split into \(entries.count) chunks")
+            print("Text split into \(entries.count) chunks")
         }
 
         return entries
@@ -134,7 +132,7 @@ public struct KokoroSynthesizer {
             if let id = vocabulary[phoneme] {
                 ids.append(id)
             } else {
-                logger.warning("Missing phoneme in vocab: '\(phoneme)'")
+                print("Missing phoneme in vocab: '\(phoneme)'")
             }
         }
         ids.append(0)
@@ -146,11 +144,11 @@ public struct KokoroSynthesizer {
             let minId = vocabulary.values.min() ?? 0
             let outOfRange = ids.filter { $0 != 0 && ($0 < minId || $0 > maxId) }
             if !outOfRange.isEmpty {
-                Self.logger.warning(
+                print(
                     "Found \(outOfRange.count) token IDs out of range [\(minId), \(maxId)] (excluding BOS/EOS=0)"
                 )
             }
-            Self.logger.debug("Tokenized \(ids.count) ids; first 32: \(ids.prefix(32))")
+            print("Tokenized \(ids.count) ids; first 32: \(ids.prefix(32))")
         }
         #endif
 
@@ -220,7 +218,7 @@ public struct KokoroSynthesizer {
             return .fiveSecond
         }
 
-        logger.notice(
+        print(
             "Promoting chunk to Kokoro 15s variant: token count \(tokenCount) exceeds short threshold=\(shortThreshold) (short capacity=\(shortCapacity), long capacity=\(longCapacity))"
         )
         return .fifteenSecond
@@ -257,12 +255,12 @@ public struct KokoroSynthesizer {
         // Pad or truncate to match model expectation
         var trimmedIds = inputIds
         if trimmedIds.count > targetTokens {
-            logger.warning(
+            print(
                 "input_ids length (\(trimmedIds.count)) exceeds targetTokens=\(targetTokens) for chunk '\(chunk.text)' — truncating"
             )
             trimmedIds = Array(trimmedIds.prefix(targetTokens))
         } else if trimmedIds.count < targetTokens {
-            Self.logger.debug(
+            print(
                 "input_ids length (\(trimmedIds.count)) below targetTokens=\(targetTokens) for chunk '\(chunk.text)' — padding with zeros"
             )
             trimmedIds.append(contentsOf: Array(repeating: Int32(0), count: targetTokens - trimmedIds.count))
@@ -391,9 +389,9 @@ public struct KokoroSynthesizer {
         let minVal = samples.min() ?? 0
         let maxVal = samples.max() ?? 0
         if maxVal - minVal == 0 {
-            logger.warning("Prediction produced constant signal (min=max=\(minVal)).")
+            print("Prediction produced constant signal (min=max=\(minVal)).")
         } else {
-            logger.info("Audio range: [\(String(format: "%.4f", minVal)), \(String(format: "%.4f", maxVal))]")
+            print("Audio range: [\(String(format: "%.4f", minVal)), \(String(format: "%.4f", maxVal))]")
         }
 
         await recycleModelArrays()
@@ -417,7 +415,7 @@ public struct KokoroSynthesizer {
             phoneticOverrides: phoneticOverrides
         )
         let totalTime = Date().timeIntervalSince(startTime)
-        Self.logger.info("Total synthesis time: \(String(format: "%.3f", totalTime))s for \(text.count) characters")
+        print("Total synthesis time: \(String(format: "%.3f", totalTime))s for \(text.count) characters")
         return result.audio
     }
 
@@ -430,12 +428,12 @@ public struct KokoroSynthesizer {
         phoneticOverrides: [TtsPhoneticOverride] = []
     ) async throws -> SynthesisResult {
 
-        logger.info("Starting synthesis: '\(text)'")
-        logger.info("Input length: \(text.count) characters")
+        print("Starting synthesis: '\(text)'")
+        print("Input length: \(text.count) characters")
         if let variantPreference {
-            logger.info("Variant preference requested: \(variantDescription(variantPreference))")
+            print("Variant preference requested: \(variantDescription(variantPreference))")
         } else {
-            logger.info("Variant preference requested: automatic")
+            print("Variant preference requested: automatic")
         }
 
         try Task.checkCancellation()
@@ -529,7 +527,7 @@ public struct KokoroSynthesizer {
         let samplesPerMillisecond = Double(TtsConstants.audioSampleRate) / 1_000.0
         let crossfadeN = max(0, Int(Double(crossfadeMs) * samplesPerMillisecond))
         var totalPredictionTime: TimeInterval = 0
-        Self.logger.info("Starting audio inference across \(totalChunks) chunk(s)")
+        print("Starting audio inference across \(totalChunks) chunk(s)")
 
         let chunkOutputs = try await withThrowingTaskGroup(of: ChunkSynthesisResult.self) { group in
             for (index, entry) in entries.enumerated() {
@@ -546,10 +544,10 @@ public struct KokoroSynthesizer {
                 }
                 let referenceVector = embeddingData.vector
                 group.addTask(priority: .userInitiated) {
-                    Self.logger.info(
+                    print(
                         "Processing chunk \(chunkIndex + 1)/\(totalChunks): \(chunk.words.count) words")
-                    Self.logger.info("Chunk \(chunkIndex + 1) text: '\(template.text)'")
-                    Self.logger.info(
+                    print("Chunk \(chunkIndex + 1) text: '\(template.text)'")
+                    print(
                         "Chunk \(chunkIndex + 1) using Kokoro \(variantDescription(template.variant)) model")
                     
                     try Task.checkCancellation()
@@ -585,7 +583,7 @@ public struct KokoroSynthesizer {
             chunkSampleBuffers[index] = chunkSamples
             totalPredictionTime += output.predictionTime
 
-            Self.logger.info(
+            print(
                 "Chunk \(index + 1) model prediction latency: \(String(format: "%.3f", output.predictionTime))s")
             let chunkDurationSeconds = Double(chunkSamples.count) / Double(TtsConstants.audioSampleRate)
             let chunkFrameCount =
@@ -595,7 +593,7 @@ public struct KokoroSynthesizer {
             if TtsConstants.kokoroFrameSamples > 0 {
                 totalFrameCount += chunkFrameCount
             }
-            Self.logger.info(
+            print(
                 "Chunk \(index + 1) duration: \(String(format: "%.3f", chunkDurationSeconds))s (\(chunkFrameCount) frames)"
             )
 
@@ -717,11 +715,11 @@ public struct KokoroSynthesizer {
 
         if TtsConstants.kokoroFrameSamples > 0 {
             let frameLabel = totalFrameCount == 1 ? "frame" : "frames"
-            Self.logger.notice(
+            print(
                 "Total model prediction time: \(String(format: "%.3f", totalPredictionTime))s for \(entries.count) chunk(s), \(totalFrameCount) total \(frameLabel)"
             )
         } else {
-            Self.logger.notice(
+            print(
                 "Total model prediction time: \(String(format: "%.3f", totalPredictionTime))s for \(entries.count) chunk(s)"
             )
         }

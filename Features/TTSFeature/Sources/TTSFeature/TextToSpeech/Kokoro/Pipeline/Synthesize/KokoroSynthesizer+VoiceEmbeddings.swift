@@ -94,13 +94,13 @@ extension KokoroSynthesizer {
                 if let vector {
                     Self.storeVoiceEmbeddingVector(vector, for: key)
                 } else {
-                    Self.logger.warning(
+                    print(
                         "Voice embedding payload lacked usable vector for \(voiceID) at \(payload.sourceURL.path)"
                     )
                 }
                 return (vector, payload.sourceURL, false)
             } catch {
-                Self.logger.warning("Failed to load voice embedding for \(voiceID): \(error.localizedDescription)")
+                print("Failed to load voice embedding for \(voiceID): \(error.localizedDescription)")
                 return (nil, candidates.first ?? voicesDir, false)
             }
         }
@@ -110,7 +110,7 @@ extension KokoroSynthesizer {
         var (vector, sourceURL, wasCached) = try resolveVector(for: voiceUsed)
 
         if vector == nil && voice != TtsConstants.recommendedVoice {
-            Self.logger.warning(
+            print(
                 "Voice embedding for \(voice) not found; falling back to \(TtsConstants.recommendedVoice)")
             voiceUsed = TtsConstants.recommendedVoice
             attemptedVoices.append(TtsConstants.recommendedVoice)
@@ -139,10 +139,10 @@ extension KokoroSynthesizer {
         let formattedNorm = String(format: "%.3f", norm)
         let payloadCached = isVoiceEmbeddingPayloadCached(for: voiceUsed)
         if wasCached || payloadCached {
-            Self.logger.debug(
+            print(
                 "Reusing cached voice embedding: \(voiceUsed), dim=\(expectedDimension), l2norm=\(formattedNorm)")
         } else {
-            Self.logger.info("Loaded voice embedding: \(voiceUsed), dim=\(expectedDimension), l2norm=\(formattedNorm)")
+            print("Loaded voice embedding: \(voiceUsed), dim=\(expectedDimension), l2norm=\(formattedNorm)")
         }
 
         return VoiceEmbeddingData(voiceID: voiceUsed, vector: resolvedVector, l2Norm: Float(norm))

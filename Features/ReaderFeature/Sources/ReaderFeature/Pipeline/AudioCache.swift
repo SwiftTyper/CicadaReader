@@ -23,9 +23,10 @@ public struct AudioCacheKey: Hashable, Sendable {
     }
 }
 
-public actor AudioSynthesisCache {
+public actor AudioCache {
     private let baseURL: URL
     private var memoryIndex: [AudioCacheKey: URL] = [:]
+    private var maxItemCount = 200
     
     public init(subdirectory: String = "AudioSynthesisCache") {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
@@ -41,6 +42,12 @@ public actor AudioSynthesisCache {
     }
     
     public func store(data: Data, for key: AudioCacheKey) throws {
+        if memoryIndex.count >= maxItemCount {
+            if let oldestKey = memoryIndex.keys.first {
+                try? remove(for: oldestKey)
+            }
+        }
+
         let url = baseURL.appendingPathComponent("\(key.value).wav")
         try data.write(to: url, options: .atomic)
         memoryIndex[key] = url

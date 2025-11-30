@@ -18,6 +18,7 @@ class ReaderViewModel {
     private let synthQueue: AsyncBuffer<SynthesizedChunk>
     private let chunker: TextChunker
     private let textLoader: TextLoader
+    private let cache: AudioCache
 
     private var currentTask: Task<Void, Never>?
     
@@ -37,13 +38,25 @@ class ReaderViewModel {
         self.chunker = textChunker
         self.synthesizer = synthesizer
         self.player = .init()
+        let cache = AudioCache()
+        self.cache = cache
         self.synthQueue = AsyncBuffer(
             targetSize: bufferAhead,
             produce: {
                 try Task.checkCancellation()
                 let text = try await textChunker.getNext()
+                
+                try Task.checkCancellation()
+                let cacheKey = AudioCacheKey(text: text, rate: 1.0)
+                let cachedAudio = await cache.retrieveData(for: cacheKey)
+
+                if let cachedAudio {
+                   return SynthesizedChunk(content: text, audioData: cachedAudio)
+                }
+                
                 try Task.checkCancellation()
                 let audio: Data = try await synthesizer.synthesize(text: text)
+                try await cache.store(data: audio, for: cacheKey)
                 return SynthesizedChunk(content: text, audioData: audio)
             }
         )

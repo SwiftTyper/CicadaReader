@@ -34,15 +34,15 @@ actor TextChunker {
 
 private extension String {
     nonisolated func makeChunks() -> [String] {
-        let text = self
+        let text = self.replacingOccurrences(of: "\n", with: " ")
         let tokenizer = NLTokenizer(unit: .sentence)
         tokenizer.string = text
         
-        var sentences: [Substring] = []
+        var sentences: [String] = []
         
         tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
-            let sentence = text[range]
-            if !sentence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let sentence = text[range].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !sentence.isEmpty {
                 sentences.append(sentence)
             }
             return true
