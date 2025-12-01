@@ -86,7 +86,7 @@ struct ComposerView: View {
                     infoMessage
                 }
                 .scrollBounceBehavior(.basedOnSize)
-                .navigationTitle("Readify")
+                .navigationTitle("CicadaReader")
                 .toolbarTitleDisplayMode(.inlineLarge)
                 .navigationDestination(item: self.$content) { book in
                     ReaderView(
