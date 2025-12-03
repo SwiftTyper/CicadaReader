@@ -3,6 +3,16 @@
 
 import PackageDescription
 
+//@software{FluidInferenceTeam_FluidAudio_2024,
+//  author = {{FluidInference Team}},
+//  title = {{FluidAudio: Local Speaker Diarization, ASR, and VAD for Apple Platforms}},
+//  year = {2024},
+//  month = {12},
+//  version = {0.7.0},
+//  url = {https://github.com/FluidInference/FluidAudio},
+//  note = {Computer software}
+//}
+
 let package = Package(
     name: "TTSFeature",
     platforms: [
@@ -12,31 +22,19 @@ let package = Package(
         .watchOS(.v9),
     ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "TTSFeature",
             targets: ["TTSFeature"]
         ),
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "TTSFeature",
             dependencies: [
                 "ESpeakNG",
-//                "FastClusterWrapper",
             ],
             path: "Sources/TTSFeature",
             exclude: ["Frameworks"],
-//            swiftSettings: [
-//                .define("ACCELERATE_NEW_LAPACK"),
-//                .define("ACCELERATE_LAPACK_ILP64"),
-//                .unsafeFlags([
-//                    "-Xcc", "-DACCELERATE_NEW_LAPACK",
-//                    "-Xcc", "-DACCELERATE_LAPACK_ILP64",
-//                ]),
-//            ]
         ),
         .binaryTarget(
             name: "ESpeakNG",
